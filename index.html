@@ -949,8 +949,8 @@
         <div>
           <h2 id="pageTitle">OTT 行业资讯</h2>
           <div class="meta">
-            👉 今天是 <b id="todayLine">—</b>　·　政策源<span class="hi" id="policyState">实时监控中</span><br/>
-            <span class="ln2">没有溯源的资讯是噪音，没有数据的判断是空想。</span>　·　数据源：<span class="hi" id="dataMode">加载中…</span>　·　抓取于 <span class="hi" id="lastFetch">—</span>　·　距下次自动刷新 <span class="hi" id="countdown">19:59</span>
+            👉 今天是 <b id="todayLine">—</b>　·　<span class="hi" id="policyState">政策源加载中…</span><br/>
+            <span class="ln2">没有溯源的资讯是噪音，没有数据的判断是空想。</span>　·　数据源：<span class="hi" id="dataMode">加载中…</span>　·　抓取于 <span class="hi" id="lastFetch">—</span>　·　距下次自动更新 <span class="hi" id="countdown">—</span>
           </div>
         </div>
         <div class="actions">
@@ -2174,11 +2174,20 @@ document.getElementById('addSrc').onclick = async ()=>{
 };
 
 /* ============================================================
-   数据新鲜度：顶部状态栏 + 20 分钟自动刷新
+   数据新鲜度：每日北京时间 06:00 自动抓取并更新（GitHub Actions 定时任务）
+   页面端：开放标签内每 20 分钟静默校验一次最新 data.js；
+           顶部显示「距下次自动更新」倒计时（到下一个 06:00 北京时间）
    ============================================================ */
 const META = RAW.meta || {};
 const REFRESH_MS = 20*60*1000;
-let nextRefreshAt = Date.now() + REFRESH_MS;
+
+// 下一次数据更新时刻：北京时间 06:00 = UTC 22:00
+function nextUpdateAt(){
+  const d = new Date();
+  d.setUTCHours(22,0,0,0);
+  if(d.getTime() <= Date.now()) d.setUTCDate(d.getUTCDate()+1);
+  return d.getTime();
+}
 
 function fmtFetchTime(iso){
   if(!iso) return '—';
@@ -2221,24 +2230,23 @@ function renderDataStatus(){
   if(ps){
     const src = (RAW.sources||[]).filter(x=>x.type==='policy');
     const bad = src.filter(x=>x.status!=='ok');
-    ps.textContent = bad.length ? `政策源 ${src.length-bad.length}/${src.length} 正常，${bad.length} 个异常` : `政策源 ${src.length} 个实时监控中`;
+    ps.textContent = bad.length ? `政策源 ${src.length-bad.length}/${src.length} 正常，${bad.length} 个异常` : `政策源 ${src.length} 个 · 每日 06:00 自动抓取`;
     ps.style.color = bad.length ? '#ff6b4a' : '';
   }
 }
 renderDataStatus();
 
-/* 倒计时：到点后真实触发一次数据重载（重新读取最新 data.js 并重绘） */
+/* 倒计时显示：距下一次每日自动更新（06:00 北京时间），到点拉取当日最新数据 */
 setInterval(()=>{
-  const left = Math.max(0, Math.round((nextRefreshAt-Date.now())/1000));
-  const m = String(Math.floor(left/60)).padStart(2,'0');
-  const s = String(left%60).padStart(2,'0');
+  const left = Math.max(0, Math.round((nextUpdateAt()-Date.now())/1000));
+  const h = Math.floor(left/3600), m = Math.floor((left%3600)/60);
   const el = document.getElementById('countdown');
-  if(el) el.textContent = `${m}:${s}`;
-  if(left<=0){
-    nextRefreshAt = Date.now() + REFRESH_MS;
-    autoReload();
-  }
+  if(el) el.textContent = h>0 ? `${h} 时 ${m} 分` : `${m} 分`;
+  if(left<=0) autoReload();
 }, 1000);
+
+/* 静默轮询：开放标签内每 20 分钟重新读取最新 data.js（赶上每日更新） */
+setInterval(()=>{ autoReload(); }, REFRESH_MS);
 
 /* 真正重新拉取 data.js（绕过缓存），有新数据就重绘并提示 */
 const _buildAtLoad = META.generated_at || '';
@@ -2287,7 +2295,6 @@ async function doRefresh(){
     NOTIFS = buildNotifs(true);
     notifExpanded = false;
     if(document.body.classList.contains('notif-open')) renderNotif();
-    nextRefreshAt = Date.now() + REFRESH_MS;
     const wait = Math.max(0, 600 - (Date.now()-t0));
     if(stamp && stamp !== _buildAtLoad){
       toast(`已重新抓取：${(fresh.meta||{}).total||0} 条（${fmtFetchTime(stamp)}）`);
