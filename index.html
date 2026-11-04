@@ -2470,23 +2470,15 @@ function aiRenderMessage(m){
   return wrap;
 }
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-let _navMiniRestore = null;
 function aiOpen(open){
   open = !!open;
   const wasOpen = document.body.classList.contains('ai-open');
   if(open === wasOpen) return;
   if(open){
-    // 打开助手：宽屏时侧栏自动收成图标栏，把空间让给「会话列表 + 对话」
+    // 打开助手：左侧导航栏保持原状（不再自动收起），用户手动折叠的状态也原样保留
     dailyClose(); // 与日报右栏互斥
-    const wide = window.innerWidth > 860;
-    _navMiniRestore = document.body.classList.contains('nav-mini');
-    if(wide && !_navMiniRestore) document.body.classList.add('nav-mini');
     aiRenderPrefs();
     aiRenderSession();
-  } else {
-    // 关闭助手：若侧栏是本次自动收起的，则复原
-    if(_navMiniRestore === false) document.body.classList.remove('nav-mini');
-    _navMiniRestore = null;
   }
   document.body.classList.toggle('ai-open', open);
   refreshNav();
