@@ -211,7 +211,7 @@
   .rank-list{list-style:none;margin:14px 0 8px;padding:0}
   .rank-list li{display:grid;grid-template-columns:20px 1fr;gap:11px;padding:11px 0;border-top:1px solid rgba(255,255,255,.045)}
   .rank-list li:first-child{border-top:0}
-  /* 榜单折叠：默认 6 条，超出部分展开/收起 */
+  /* 榜单折叠：默认 5 条，超出部分展开/收起 */
   .rank-toggle{
     display:flex;justify-content:center;align-items:center;gap:6px;width:100%;
     margin-top:8px;padding:8px 0;border-radius:9px;
@@ -1339,8 +1339,8 @@ function render(){
   }
 
   grid.innerHTML = cards.map(c=>{
-    // 每张卡片：最多展示 6 条榜单，超出部分支持「展开更多 / 收起」
-    const LIMIT = 6;
+    // 每张卡片：最多展示 5 条榜单，超出部分支持「展开更多 / 收起」
+    const LIMIT = 5;
     const tooMany = c.items.length > LIMIT;
     const expanded = !!cardExpanded[c.id];
     const items = (tooMany && !expanded) ? c.items.slice(0, LIMIT) : c.items;
@@ -2903,9 +2903,10 @@ function dailyBuild(){
   pool.forEach(x=>{ const k = _dailySectionTitle(x.it.cat || x.card.cat); (groups[k]=groups[k]||[]).push(x); });
   let secNo = 1;
   const htmlSecs = Object.entries(groups).map(([title, xs])=>{
+    // 每个分类分节至多展示 5 条
     return `<div class="seg">
       <h5><i>${secNo++}</i>${escapeHtml(title)}</h5>
-      ${xs.slice(0,6).map(x=>{
+      ${xs.slice(0,5).map(x=>{
         const src = x.card.name;
         const u = x.it.u && x.it.u!=='#';
         return `<div style="padding:7px 0;border-bottom:1px dashed var(--line)">
