@@ -2562,12 +2562,77 @@ function localChatReply(text){
     followups: ['给我看最新的一条', '按分类统计一下', '换个关键词再搜']
   };
 }
+/* 日期如实标注：精确日期 / 月精度 / 待补充（不把「2025-10（月精度）」硬截成怪串） */
+function _dateLabel(d){
+  const s = (d||'').trim();
+  if(!s || /待补充/.test(s)) return '时间待补充';
+  if(/月精度/.test(s)) return s.replace(/（[^）]*）/g,'').trim() + '（月精度，具体日期待补充）';
+  return s.slice(0,10);
+}
+
+/* 生成 300 字以内的结构化摘要。
+   只使用本站真实字段（标题、信源、日期、分类、热度、原文链接、多源收录）
+   与库内真实存在的关联条目，不引入标题之外的任何事实或数字。 */
+function buildDeepSummary(it, card){
+  const cat  = it.cat || card.cat || '其他动态';
+  const src  = card.name;
+  const date = _dateLabel(it.d);
+  const all  = flatItems();
+
+  // 同分类条目按 URL/标题去重后按热度排序，给出真实的相对位置
+  const seen = new Set();
+  const catList = all.filter(x=>{
+    if((x.it.cat||x.card.cat)!==cat) return false;
+    const k = (x.it.u && x.it.u!=='#') ? x.it.u : x.it.t;
+    if(seen.has(k)) return false;
+    seen.add(k); return true;
+  }).sort((a,b)=>(b.it.h||0)-(a.it.h||0));
+  const catN = catList.length;
+  const rank = Math.max(1, catList.findIndex(x=>x.it.t===it.t) + 1);
+
+  // 管道摘要多为标题子串，重复时不复述
+  const norm = s=>(s||'').replace(/[\s，。、：；（）()《》「」·]/g,'');
+  const sm = (it.summary||'').trim();
+  const redundant = !sm || norm(it.t).includes(norm(sm)) || norm(sm).includes(norm(it.t));
+
+  const urlOk = it.u && it.u!=='待补充' && it.u!=='#';
+  const also  = (it.also_in||[]).length;
+  const peersSrc = (card.items||[]).filter(x=>x.id!==it.id).sort((a,b)=>(b.h||0)-(a.h||0));
+  const relatedN = Math.max(0, catN - 1);
+
+  const segs = [];
+  segs.push(redundant
+    ? `本条资讯为「${it.t}」。`
+    : `本条资讯为「${it.t}」，核心事项可概括为：${sm}。`);
+  segs.push(`由「${src}」收录，${/待补充|月精度/.test(date) ? date : `发布于 ${date}`}。`);
+  segs.push(`本站按内容归入「${cat}」类，热度 ${it.h||0}${catN>1 ? `，在该类 ${catN} 条去重资讯中按热度列第 ${rank} 位` : ''}；热度由品类基值、来源权重与时效加权计算，不代表实际阅读量。`);
+  if(peersSrc.length){
+    const t = peersSrc.slice(0,2).map(x=>x.t.length>30?x.t.slice(0,30)+'…':x.t).join('；');
+    segs.push(`同一信源近期还收录：${t}。`);
+  }
+  if(relatedN>2){
+    segs.push(`同分类另有 ${relatedN} 条相关资讯可供交叉查证，可在分类视图中按标题检索。`);
+  }
+  segs.push(urlOk
+    ? `正文以原文为准，点击标题可跳转至发布页核验${also?`；该条另被 ${also} 个信源共同收录`:''}。`
+    : `该条暂无可用原文链接，内容仅依据抓取到的标题与元信息整理${also?`，另被 ${also} 个信源共同收录`:''}，引用前需注意核验。`);
+
+  // 300 字上限：按句累加，超出即止（不硬截断句子）
+  const out = [];
+  let len = 0;
+  for(const s of segs){
+    if(len + s.length > 300) break;
+    out.push(s); len += s.length;
+  }
+  return out.join('') || segs[0].slice(0,300);
+}
+
 function localArticleSummary(id){
   for(const card of DATA){
     for(const it of (card.items||[])){
       if(it.id === id){
         const urlOk = it.u && it.u!=='待补充' && it.u!=='#';
-        const reply = `【深度总结】\n**标题**：${it.t}\n\n**来源**：${card.name} · ${_fmtDate(it.d)}\n**分类**：${it.cat || card.cat}　**热度**：${it.h||'-'}\n\n**摘要**：${it.summary || '（原文未提供摘要，以下为标题要点）'}\n\n**对竞聘的参考**：\n- ${it.cat==='政策' ? '属政策监管动向，可作为行业合规背景引用。' : it.cat==='数据' ? '含行业数据，可作为汇报中的量化支撑。' : it.cat==='竞品' ? '属竞品动态，可用于对标分析章节。' : '可补充进行业动态素材库。'}\n- 建议结合最近 30 天同分类资讯交叉验证趋势。\n${urlOk ? '\n原文链接见下方溯源。' : ''}`;
+        const reply = `【深度总结】\n**标题**：${it.t}\n\n**来源**：${card.name} · ${_dateLabel(it.d)}\n**分类**：${it.cat || card.cat}　**热度**：${it.h||'-'}\n\n**摘要**：${buildDeepSummary(it, card)}\n${urlOk ? '\n原文链接见下方溯源。' : ''}`;
         return {
           available: true, reply,
           evidence: urlOk ? [{title:it.t, url:it.u, source:card.name, published_at:_fmtDate(it.d)}] : []
