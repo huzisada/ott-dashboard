@@ -238,11 +238,6 @@
   .item-foot{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:11.5px;color:var(--tx-dim2);flex-wrap:wrap}
   .heat{display:inline-flex;align-items:center;gap:4px;color:var(--flame)}
   .heat svg{width:11px;height:11px}
-  .diff{
-    display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-size:11px;
-    color:var(--accent);background:var(--accent-soft);border:1px solid rgba(11,197,160,.2);
-    padding:3px 8px;border-radius:7px
-  }
   .pending{color:#e0b341}
   .card-tools{display:flex;gap:6px;margin-left:auto;flex-shrink:0}
   .mini-tag{font-size:10.5px;padding:3px 8px;border-radius:7px;background:rgba(255,255,255,.05);color:var(--tx-dim)}
@@ -1269,7 +1264,7 @@ const DATA = (RAW.cards || []).map(c=>({
     id: c.id + '__' + i,
     t: it.t, u: it.u, h: it.h,
     d: it.d === '待补充' ? '时间待补充' : it.d,
-    summary: it.summary, diff: it.diff, cat: it.cat,
+    summary: it.summary, cat: it.cat,
     also_in: it.also_in || [], month: it.month || '',
   })),
 }));
@@ -1391,7 +1386,6 @@ function render(){
                 ${it.id?`<button class="item-deep" data-id="${it.id}" title="AI 深度总结" aria-label="AI 深度总结">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 2.4 1 4.4 2.5 5.8L5 22l4.4-2.4A8 8 0 1 0 12 2z"/></svg>AI 总结</button>`:''}
               </div>
-              ${it.diff?`<span class="diff">⚖ ${it.diff}</span>`:''}
             </div>
           </li>`).join('')}
       </ol>

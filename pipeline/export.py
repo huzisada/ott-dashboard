@@ -60,7 +60,6 @@ def build():
                   else (f"{it['month']}（月精度）" if it.get("month") else "时间待补充")),
             "summary": it["summary"],
             "cat": it["cat"],
-            "diff": it.get("diff") or "",
             "also_in": it.get("also_in") or [],
             "month": it.get("month") or "",
             "brand": it.get("brand") or "",

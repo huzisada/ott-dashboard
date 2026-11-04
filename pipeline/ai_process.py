@@ -101,26 +101,6 @@ def make_summary(title, cat):
         return f"{brand + '相关：' if brand else '竞品动态：'}{t}"[:78]
     return f"{t}"[:78]
 
-# ---------- 竞品「与我方差异」 ----------
-DIFF_RULES = {
-    "小米": "生态协同（人车家）与硬件性价比是其核心壁垒，我方需在单品体验上做差异化",
-    "海信": "显示技术（ULED/MiniLED）与海外渠道领先，我方宜避开画质军备竞赛",
-    "创维": "主打 AI 与健康电视概念，属于概念营销差异化，可对标其话术设计",
-    "酷开": "系统与内容运营能力强、硬件成本可控，与运营变现路径直接竞争",
-    "芒果超媒": "自制内容能力强、女性用户占比高，会员+广告双轮驱动",
-    "新媒股份": "区域 IPTV 资源深厚，增值业务稳健",
-    "银河奇异果": "内容库规模大，会员体系成熟",
-    "极光TV": "绑定智能硬件生态，社交与游戏协同",
-    "云视听小电视": "二次元社区调性强，年轻用户黏性高",
-    "华为": "鸿蒙生态与高端品牌溢价",
-    "荣耀": "性价比与年轻化渠道",
-}
-def make_diff(title):
-    for brand, d in DIFF_RULES.items():
-        if brand in title:
-            return f"与我方差异：{d}"
-    return ""
-
 # ---------- 竞品品牌识别 ----------
 BRAND_ALIAS = [
     ("小米", ["小米", "REDMI", "红米"]),
@@ -260,11 +240,10 @@ def process(raw):
         it["summary"] = make_summary(it["title"], cat)
         it["heat"] = calc_heat(it, cat, now)
         it["brand"] = detect_brand(it["title"])
-        # 只要命中竞品品牌，就升级为竞品类并附「与我方差异」
+        # 只要命中竞品品牌，就升级为竞品类
         if it["brand"] and cat != "政策":
             cat = "竞品"
             it["cat"] = "竞品"
-        it["diff"] = make_diff(it["title"]) if cat == "竞品" else ""
         # 溯源字段
         # 月精度日期（来自 URL 内嵌年月）不作为「发布时间」展示，只作归月参考
         pub = it["published_at"]
