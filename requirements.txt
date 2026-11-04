@@ -1,0 +1,4 @@
+# OTT 看板抓取管道依赖（Python）
+# crawl.py 需要 bs4 + playwright（仅 browser 引擎的广电总局/工信部用到）
+beautifulsoup4
+playwright

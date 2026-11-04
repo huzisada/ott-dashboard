@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 管道中间产物（不入库；data.js 以仓库根目录版本为准）
+pipeline/data/raw.json
+pipeline/data/processed.json
+pipeline/data/data.js
+pipeline/data/pipeline.log
+pipeline/data/alert.txt
+pipeline/data/daily-cron.log
+pipeline/data/last_ok.txt
+
+# 本地站点构建产物
+site/
+
+# 系统
+.DS_Store
