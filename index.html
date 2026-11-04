@@ -950,7 +950,7 @@
           <h2 id="pageTitle">OTT 行业资讯</h2>
           <div class="meta">
             👉 今天是 <b id="todayLine">—</b>　·　<span class="hi" id="policyState">政策源加载中…</span><br/>
-            <span class="ln2">没有溯源的资讯是噪音，没有数据的判断是空想。</span>　·　数据源：<span class="hi" id="dataMode">加载中…</span>　·　抓取于 <span class="hi" id="lastFetch">—</span>　·　距下次自动更新 <span class="hi" id="countdown">—</span>
+            <span class="ln2">没有溯源的资讯是噪音，没有数据的判断是空想。</span>　·　数据源：<span class="hi" id="dataMode">加载中…</span>　·　抓取于 <span class="hi" id="lastFetch">—</span>
           </div>
         </div>
         <div class="actions">
@@ -2175,19 +2175,10 @@ document.getElementById('addSrc').onclick = async ()=>{
 
 /* ============================================================
    数据新鲜度：每日北京时间 06:00 自动抓取并更新（GitHub Actions 定时任务）
-   页面端：开放标签内每 20 分钟静默校验一次最新 data.js；
-           顶部显示「距下次自动更新」倒计时（到下一个 06:00 北京时间）
+   页面端：开放标签内每 20 分钟静默校验一次最新 data.js（不显示倒计时）
    ============================================================ */
 const META = RAW.meta || {};
 const REFRESH_MS = 20*60*1000;
-
-// 下一次数据更新时刻：北京时间 06:00 = UTC 22:00
-function nextUpdateAt(){
-  const d = new Date();
-  d.setUTCHours(22,0,0,0);
-  if(d.getTime() <= Date.now()) d.setUTCDate(d.getUTCDate()+1);
-  return d.getTime();
-}
 
 function fmtFetchTime(iso){
   if(!iso) return '—';
@@ -2235,15 +2226,6 @@ function renderDataStatus(){
   }
 }
 renderDataStatus();
-
-/* 倒计时显示：距下一次每日自动更新（06:00 北京时间），到点拉取当日最新数据 */
-setInterval(()=>{
-  const left = Math.max(0, Math.round((nextUpdateAt()-Date.now())/1000));
-  const h = Math.floor(left/3600), m = Math.floor((left%3600)/60);
-  const el = document.getElementById('countdown');
-  if(el) el.textContent = h>0 ? `${h} 时 ${m} 分` : `${m} 分`;
-  if(left<=0) autoReload();
-}, 1000);
 
 /* 静默轮询：开放标签内每 20 分钟重新读取最新 data.js（赶上每日更新） */
 setInterval(()=>{ autoReload(); }, REFRESH_MS);
