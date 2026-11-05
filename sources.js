@@ -1,0 +1,180 @@
+/* 由 build_site.sh 从 pipeline/sources.json 生成，请勿手改 */
+window.__OTT_REPO__ = {"owner": "huzisada", "repo": "ott-dashboard"};
+window.__OTT_SRC_CONFIG__ = {
+ "description": "OTT 资讯看板 · 信源配置（全部为公开可访问页面，遵守 robots 协议，不爬付费/隐私内容）",
+ "sources": [
+  {
+   "id": "lmtw",
+   "name": "流媒体网",
+   "cat": "行业媒体",
+   "type": "media",
+   "freq": "workday",
+   "list_url": "https://lmtw.com/mzw/content/index",
+   "engine": "static",
+   "enabled": true,
+   "note": "OTT/IPTV 垂直媒体，首页服务端渲染"
+  },
+  {
+   "id": "lmtw_otv",
+   "name": "流媒体网·OTT 频道",
+   "cat": "行业媒体",
+   "type": "media",
+   "freq": "workday",
+   "list_url": "http://otv.lmtw.com",
+   "engine": "static",
+   "enabled": true,
+   "note": "OTT 专题子站，URL 内嵌发布日期",
+   "pages": 8,
+   "max_items": 160
+  },
+  {
+   "id": "lmtw_vendor",
+   "name": "流媒体网·厂商",
+   "cat": "竞品",
+   "type": "competitor",
+   "freq": "workday",
+   "list_url": "http://otv.lmtw.com/pnews",
+   "engine": "static",
+   "enabled": true,
+   "note": "终端厂商动态栏目，竞品追踪主力源",
+   "pages": 10,
+   "max_items": 200
+  },
+  {
+   "id": "lmtw_policy",
+   "name": "流媒体网·政策",
+   "cat": "政策",
+   "type": "policy",
+   "freq": "workday",
+   "list_url": "http://otv.lmtw.com/zcjg",
+   "engine": "static",
+   "enabled": true,
+   "note": "行业政策解读",
+   "pages": 6,
+   "max_items": 80
+  },
+  {
+   "id": "lmtw_data",
+   "name": "流媒体网·数据",
+   "cat": "数据机构",
+   "type": "data",
+   "freq": "workday",
+   "list_url": "http://otv.lmtw.com/data",
+   "engine": "static",
+   "enabled": true,
+   "note": "行业数据与榜单",
+   "pages": 6,
+   "max_items": 80
+  },
+  {
+   "id": "imas",
+   "name": "依马狮广电网",
+   "cat": "行业媒体",
+   "type": "media",
+   "freq": "workday",
+   "list_url": "https://www.imaschina.com",
+   "engine": "static",
+   "enabled": true,
+   "note": "广电/专业视听行业媒体"
+  },
+  {
+   "id": "avc",
+   "name": "奥维云网",
+   "cat": "数据机构",
+   "type": "data",
+   "freq": "workday",
+   "list_url": "https://newcompassback.avc-mr.com/applet/user/avc-information/info/list?term=14",
+   "detail_url": "https://www.avc-mr.com/article/detail?id={id}",
+   "engine": "json",
+   "enabled": true,
+   "note": "官方资讯接口，含阅读量可作热度，详情页有完整正文"
+  },
+  {
+   "id": "nrta_gg",
+   "name": "广电总局·公告公示",
+   "cat": "政策",
+   "type": "policy",
+   "freq": "realtime",
+   "list_url": "https://www.nrta.gov.cn/col/col113/index.html",
+   "engine": "browser",
+   "enabled": true,
+   "note": "政策源，实时监控优先级最高"
+  },
+  {
+   "id": "nrta_zc",
+   "name": "广电总局·政策解读",
+   "cat": "政策",
+   "type": "policy",
+   "freq": "realtime",
+   "list_url": "https://www.nrta.gov.cn/col/col3730/index.html",
+   "engine": "browser",
+   "enabled": true,
+   "note": "政策解读栏目"
+  },
+  {
+   "id": "miit_zc",
+   "name": "工信部·政策文件",
+   "cat": "政策",
+   "type": "policy",
+   "freq": "realtime",
+   "list_url": "https://www.miit.gov.cn/zwgk/zcwj/index.html",
+   "engine": "browser",
+   "enabled": true,
+   "note": "工信部政策文件栏目"
+  },
+  {
+   "id": "qbitai",
+   "name": "量子位",
+   "cat": "AI 资讯",
+   "type": "media",
+   "freq": "workday",
+   "list_url": "https://www.qbitai.com",
+   "engine": "static",
+   "pages": 2,
+   "max_items": 40,
+   "enabled": true,
+   "note": "AI 行业媒体，用于订阅源管理测试"
+  }
+ ],
+ "keywords": {
+  "brands": [
+   "小米",
+   "海信",
+   "创维",
+   "酷开",
+   "芒果超媒",
+   "新媒股份",
+   "银河奇异果",
+   "极光TV",
+   "云视听小电视",
+   "华为",
+   "荣耀",
+   "Vidda",
+   "REDMI"
+  ],
+  "actions": [
+   "新品",
+   "财报",
+   "合作",
+   "裁员"
+  ],
+  "data": [
+   "OTT",
+   "广告收入",
+   "会员",
+   "大屏营销",
+   "开机",
+   "收视",
+   "出货"
+  ],
+  "policy": [
+   "套娃收费",
+   "开机广告",
+   "治理",
+   "超高清",
+   "一体化",
+   "备案",
+   "规范"
+  ]
+ }
+};

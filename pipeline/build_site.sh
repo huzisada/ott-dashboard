@@ -22,6 +22,25 @@ for f in favicon.ico favicon.svg favicon.png favicon-16.png favicon-32.png apple
   [ -f "$ROOT/$f" ] && cp "$ROOT/$f" "$SITE/"
 done
 
+# 3.5) 订阅源完整配置 → sources.js（前端订阅源管理的权威配置）
+#     同时写一份到仓库根，方便本地 file:// 预览；线上以 site/ 内的为准
+python3 - "$ROOT" "$SITE" <<'PY'
+import json, os, sys
+from pathlib import Path
+root, site = Path(sys.argv[1]), Path(sys.argv[2])
+cfg = json.loads((root / "pipeline" / "sources.json").read_text(encoding="utf-8"))
+# CI 里 GITHUB_REPOSITORY 由 Actions 自动注入，确保前端写回的仓库名绝对准确
+full = os.environ.get("GITHUB_REPOSITORY", "huzisada/ott-dashboard")
+owner, _, name = full.partition("/")
+meta = {"owner": owner or "huzisada", "repo": name or "ott-dashboard"}
+js = ("/* 由 build_site.sh 从 pipeline/sources.json 生成，请勿手改 */\n"
+      "window.__OTT_REPO__ = " + json.dumps(meta, ensure_ascii=False) + ";\n"
+      "window.__OTT_SRC_CONFIG__ = " + json.dumps(cfg, ensure_ascii=False, indent=1) + ";\n")
+(site / "sources.js").write_text(js, encoding="utf-8")
+(root / "sources.js").write_text(js, encoding="utf-8")
+print("sources.js 已生成：%d 个源，写回目标 %s/%s" % (len(cfg.get("sources", [])), meta["owner"], meta["repo"]))
+PY
+
 # 4) 用构建号替换 index.html 里的 @@BUILD@@，强制浏览器刷新缓存
 BUILD_ID="${OTT_BUILD_ID:-$(date +%Y%m%d%H%M%S)}"
 if command -v sed >/dev/null; then

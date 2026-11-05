@@ -42,6 +42,29 @@ OT T看板本身是纯静态站（`index.html` + `data.js` + 图标），天然�
 | 部署 | `upload-pages-artifact` + `deploy-pages` |
 | 失败告警 | 抓取失败时自动开一个 Issue 告警（不部署，保留上一版正常数据） |
 
+## 订阅源管理（真实写回）
+
+面板里的**开关 / 删除 / 新增 / 编辑**不再只是本地展示，而是写回仓库的
+`pipeline/sources.json`；点「保存到 GitHub 并重新抓取」后经 Contents API 提交，
+并自动触发一次 `workflow_dispatch`，约 5 分钟上线。
+
+**一次性准备**：生成一个 **classic** 类型、勾选 `repo` 的 Personal Access Token
+（GitHub → Settings → Developer settings → Tokens (classic)），打开面板点
+「设置令牌」粘贴一次。令牌只存在于使用者本机浏览器（可勾选「记住」存 localStorage，
+否则仅本次会话），**不会写入仓库、不会上传到任何服务器**。
+
+行为约定：
+
+- 未连接时面板为**只读**，改动不会写回；点保存会提示先设置令牌。
+- 改动先**暂存**，需点底部保存按钮才提交；关闭/重开面板会提示未保存更改。
+- 保存前先拉取仓库实时配置（带 `sha` 乐观锁），多人同时编辑时后提交者会收到冲突提示。
+- 抓取频率统一为**每日 06:17**；面板不再提供每小时 / 实时监控等无法落地的选项。
+- **关键词规则目前仅作本地备注**，管道不读取（要生效需扩展 `ai_process.py`）。
+- **新增源 ≠ 一定抓得到**：管道用通用链接解析器，SPA / 反爬 / 特殊 DOM 可能返回
+  `empty`，需人工验收；复杂站点要在 `crawl.py` 里补 adapter。
+- `build_site.sh` 会把 `sources.json` 生成成 `site/sources.js` 供前端读取，
+  并写入 `window.__OTT_REPO__`（CI 取自 `GITHUB_REPOSITORY`，保证写回目标准确）。
+
 ## 已知风险
 
 - **网络可达性**：GitHub 托管 Runner 位于境外，访问部分国内站点
