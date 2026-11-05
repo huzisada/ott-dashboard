@@ -15,7 +15,7 @@ OTT 资讯 · AI 处理层（规则引擎版，无需外部 API）
   - 原文明说「待补充」的字段，摘要里不允许出现具体数值
 """
 import json, re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
 
@@ -266,7 +266,7 @@ def process(raw):
 
     stats = {
         "generated_at": raw["generated_at"],
-        "processed_at": now.isoformat(timespec="seconds"),
+        "processed_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "raw_count": before,
         "spam_filtered": spam_cut,
         "stale_filtered": stale_cut,

@@ -8,7 +8,7 @@
 `workbuddy.host`"在纯外部调度下做不到。
 
 OT T看板本身是纯静态站（`index.html` + `data.js` + 图标），天然适合托管在
-**GitHub Pages**。把抓取调度放进去后，站点每天 06:00（北京时间）由 Actions
+**GitHub Pages**。把抓取调度放进去后，站点每天 06:17（北京时间）由 Actions
 自己更新，不依赖沙箱、不依赖人工——这才是真正"打开即最新"。
 
 > `workbuddy.host` 链接仍保留为**手动镜像**：需要时喊我（`publish.js`）重新发布一次即可，
@@ -27,14 +27,14 @@ OT T看板本身是纯静态站（`index.html` + `data.js` + 图标），天然�
    ```
 3. 仓库 → **Settings → Pages → Build and deployment → Source** 选择
    **GitHub Actions**。
-4. 完成。此后每天 06:00（北京时间）自动跑；也可在 Actions 页面点
+4. 完成。此后每天 06:17（北京时间）自动跑；也可在 Actions 页面点
    **Run workflow** 手动触发测试。
 
 ## 工作流做了什么
 
 | 步骤 | 说明 |
 |---|---|
-| `schedule: '0 22 * * *'` | UTC 22:00 = 北京时间次日 06:00 |
+| `schedule: '17 22 * * *'` | UTC 22:17 = 北京时间次日 06:17（刻意避开整点排队） |
 | 安装依赖 | `requirements.txt`（bs4 + playwright）+ `playwright install chromium` |
 | 跑管道 | `pipeline/run_pipeline.sh` → 抓取 → AI 处理 → 导出 `data.js` |
 | 组装站点 | `pipeline/build_site.sh` → 产出 `site/`（并替换 `@@BUILD@@` 强制刷新缓存） |
@@ -50,5 +50,5 @@ OT T看板本身是纯静态站（`index.html` + `data.js` + 图标），天然�
   若长期拉不动，可考虑换成境内 Runner 或放开来源白名单。
 - **调度静默**：GitHub 对 60 天无活动的仓库会暂停定时任务。本项目长期有人看，
   一般不受影响；若发现停止，进 Actions 页手动触发一次即恢复。
-- **时区**：cron 用 UTC，已换算为北京时间 06:00；如需调整改 `daily.yml` 里的
+- **时区**：cron 用 UTC，已换算为北京时间 06:17；如需调整改 `daily.yml` 里的
   `cron` 表达式即可。

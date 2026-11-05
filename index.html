@@ -2168,23 +2168,28 @@ document.getElementById('addSrc').onclick = async ()=>{
 };
 
 /* ============================================================
-   数据新鲜度：每日北京时间 06:00 自动抓取并更新（GitHub Actions 定时任务）
+   数据新鲜度：每日北京时间 06:17 自动抓取并更新（GitHub Actions 定时任务）
    页面端：开放标签内每 20 分钟静默校验一次最新 data.js（不显示倒计时）
    ============================================================ */
 const META = RAW.meta || {};
 const REFRESH_MS = 20*60*1000;
 
+function parseStamp(iso){
+  if(!iso) return null;
+  // 抓取跑在 UTC 的 Actions runner 上；历史数据没带时区后缀，统一按 UTC 解析，
+  // 否则浏览器会按本地时区（北京 UTC+8）多算 8 小时，导致「提前报红 / 时间显示错」。
+  const s = /(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + 'Z';
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
 function fmtFetchTime(iso){
-  if(!iso) return '—';
-  const d = new Date(iso); if(isNaN(d)) return '—';
+  const d = parseStamp(iso); if(!d) return '—';
   const pad = n=>String(n).padStart(2,'0');
   return `${d.getMonth()+1}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 function hoursSince(iso){
-  if(!iso) return null;
-  const t = new Date(iso).getTime();
-  if(isNaN(t)) return null;
-  return (Date.now()-t)/3600000;
+  const d = parseStamp(iso); if(!d) return null;
+  return (Date.now()-d.getTime())/3600000;
 }
 function renderDataStatus(){
   // 今日日期（替换原先写死的「10 月 10 日」）
@@ -2215,7 +2220,7 @@ function renderDataStatus(){
   if(ps){
     const src = (RAW.sources||[]).filter(x=>x.type==='policy');
     const bad = src.filter(x=>x.status!=='ok');
-    ps.textContent = bad.length ? `政策源 ${src.length-bad.length}/${src.length} 正常，${bad.length} 个异常` : `政策源 ${src.length} 个 · 每日 06:00 自动抓取`;
+    ps.textContent = bad.length ? `政策源 ${src.length-bad.length}/${src.length} 正常，${bad.length} 个异常` : `政策源 ${src.length} 个 · 每日 06:17 自动抓取`;
     ps.style.color = bad.length ? '#ff6b4a' : '';
   }
 }

@@ -8,9 +8,14 @@ OTT 行业资讯聚合 · 抓取器
   3. 每条记录保留原始链接 + 真实发布时间，抓不到时间就标「待补充」，绝不编造
 """
 import json, re, ssl, time, hashlib, urllib.request, urllib.robotparser
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
+
+
+def utc_stamp():
+    """统一输出 UTC 绝对时刻（带 Z），避免浏览器把无时区的时间串按本地时区误读。"""
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 import asyncio
 from bs4 import BeautifulSoup
@@ -233,7 +238,7 @@ async def crawl_source(src):
     res = {"id": src["id"], "name": src["name"], "cat": src["cat"],
            "type": src["type"], "freq": src["freq"],
            "list_url": src["list_url"], "items": [],
-           "status": "ok", "error": "", "fetched_at": datetime.now().isoformat(timespec="seconds")}
+           "status": "ok", "error": "", "fetched_at": utc_stamp()}
     if not src.get("enabled"):
         res["status"] = "paused"
         res["error"] = "已停用"
@@ -276,7 +281,7 @@ async def main():
     for s in heavy:
         results.append(await crawl_source(s))
     payload = {
-        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "generated_at": utc_stamp(),
         "source_count": len(results),
         "ok_count": sum(1 for r in results if r["status"] == "ok"),
         "total_items": sum(len(r["items"]) for r in results),
