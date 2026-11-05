@@ -26,6 +26,12 @@ if [ "$ok" -ne 1 ]; then
   exit 1
 fi
 
+# 1.5) 正文摘录：为「内容摘要」补真实原文片段
+#      该步骤失败不阻断主管道，摘要会自动如实降级为标题要点
+if ! python3 enrich.py >> "$LOG" 2>&1; then
+  echo "!! 正文摘录失败，本次摘要降级为标题要点" >> "$LOG"
+fi
+
 # 2) AI 处理 + 3) 导出
 python3 ai_process.py >> "$LOG" 2>&1
 python3 export.py >> "$LOG" 2>&1

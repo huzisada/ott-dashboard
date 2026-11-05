@@ -59,6 +59,7 @@ def build():
             "d": (it["published_at"] if it["published_at"] != "待补充"
                   else (f"{it['month']}（月精度）" if it.get("month") else "时间待补充")),
             "summary": it["summary"],
+            "kind": it.get("summary_kind", "title"),
             "cat": it["cat"],
             "also_in": it.get("also_in") or [],
             "month": it.get("month") or "",

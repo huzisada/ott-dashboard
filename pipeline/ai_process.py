@@ -72,8 +72,34 @@ def is_spam(title):
 PREFIX_RE = re.compile(r"^【[^】]{1,20}】\s*")
 TRAIL_RE = re.compile(r"\s*[-—|｜]\s*[^-—|｜]{0,12}$")
 
-def make_summary(title, cat):
-    """一句话摘要：只重组原标题信息，不添加新事实"""
+def _clean_excerpt(text):
+    """抽取式清洗：只做去噪与按句截断，不改写原文语义、不添加新事实。"""
+    s = re.sub(r"\s+", " ", (text or "")).strip()
+    s = re.sub(r"(报告推荐|相关推荐|延伸阅读|推荐阅读)\s*[|｜:：]?\s*", "", s)
+    # 公文的文号与收文单位列表信息量低，跳到其后正文
+    s = re.sub(r"^[\u4e00-\u9fa5A-Za-z]{0,20}﹝\d{4}﹞\d+号\s*", "", s)
+    s = re.sub(r"^(各省、自治区|各有关单位|各省级).{0,220}?[：:]\s*", "", s)
+    if not s:
+        return ""
+    out, total = [], 0
+    for sent in re.split(r"(?<=[。！？!?；;])", s):
+        sent = sent.strip()
+        if len(sent) < 8:
+            continue
+        if total + len(sent) > 170 or len(out) >= 3:
+            break
+        out.append(sent)
+        total += len(sent)
+    return "".join(out).strip() or s[:170]
+
+
+def make_summary(title, cat, excerpt=""):
+    """返回 (摘要文本, 类型)。
+    有原文摘录时生成「内容摘要」；取不到正文时如实降级为「标题要点」，绝不编造。
+    """
+    ex = _clean_excerpt(excerpt)
+    if ex:
+        return ex, "content"
     t = PREFIX_RE.sub("", title).strip()
     t = t.rstrip("？?！!。.，,")
     # 数字类标题保留原数字（来自原文），只做结构压缩
@@ -93,13 +119,13 @@ def make_summary(title, cat):
             s = f"{issuer}：{core}"
         else:
             s = core or title
-        return s[:78]
+        return s[:78], "title"
     if cat == "数据":
-        return f"数据观察：{t}"[:78]
+        return f"数据观察：{t}"[:78], "title"
     if cat == "竞品":
         brand = next((b for b in KW["brands"] if b in title), "")
-        return f"{brand + '相关：' if brand else '竞品动态：'}{t}"[:78]
-    return f"{t}"[:78]
+        return f"{brand + '相关：' if brand else '竞品动态：'}{t}"[:78], "title"
+    return f"{t}"[:78], "title"
 
 # ---------- 竞品品牌识别 ----------
 BRAND_ALIAS = [
@@ -237,7 +263,8 @@ def process(raw):
     for it in uniq:
         cat = classify(it["title"])
         it["cat"] = cat
-        it["summary"] = make_summary(it["title"], cat)
+        it["summary"], it["summary_kind"] = make_summary(
+            it["title"], cat, it.get("excerpt", ""))
         it["heat"] = calc_heat(it, cat, now)
         it["brand"] = detect_brand(it["title"])
         # 只要命中竞品品牌，就升级为竞品类
@@ -258,6 +285,7 @@ def process(raw):
         }
         if not it["trace"]["has_url"]:
             it["summary"] = "【待补充】原文链接缺失，本条仅作线索记录，未生成摘要"
+            it["summary_kind"] = "none"
         it["quotable"] = ""   # 由前端从原文提取，禁止在此凭空生成
 
     # 4) 按分类 + 热度排序
