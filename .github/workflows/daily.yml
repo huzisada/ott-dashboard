@@ -4,10 +4,16 @@ name: OTT 看板 · 每日自动抓取与发布
 #   1) 每天北京时间 06:17 自动跑（GitHub cron 为 UTC，06:17 CST = 22:17 UTC 前一天）
 #      刻意避开整点：GitHub 整点高负载会让定时任务延迟数小时（实测曾延迟近 4 小时）
 #   2) 允许在 Actions 页面手动触发（workflow_dispatch），方便调试
+#   3) 有人在 GitHub 网页或 PR 里改了 pipeline/sources.json 并推到 main → 立即重抓并重建站点
+#      paths 过滤是必要的：本工作流自己会提交 data.js，不过滤会有循环触发风险
 on:
   schedule:
     - cron: '17 22 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'pipeline/sources.json'
 
 # 权限：contents 用于提交最新 data.js；pages/id-token 用于部署 GitHub Pages
 permissions:

@@ -3090,93 +3090,18 @@ document.addEventListener('click', e=>{
 }, false);
 
 /* ============================================================
-   L1：订阅源管理「真实写回」
-   - 权威配置来自 sources.js（构建时从 pipeline/sources.json 生成）
-   - 开关 / 删除 / 新增 / 编辑先暂存到 L1_CFG，点「保存到 GitHub」
-     后经 Contents API PUT 回仓库，再触发 workflow_dispatch 立即重抓
-   - PAT 只存使用者本机浏览器，绝不写入仓库、绝不外传
+   订阅源管理 · 只读展示（零令牌）
+   - 配置权威来源：sources.js（构建时由 pipeline/sources.json 生成）
+   - 运行状态来源：data.js（含每个源的真实抓取状态与时间）
+   - 本页不写仓库、不携带任何凭证、不调用 GitHub API。
+     配置变更统一在 GitHub 网页编辑并提交，推送到 main 后由 daily.yml 自动重抓、重建站点。
    ============================================================ */
-const L1_API    = 'https://api.github.com';
 const L1_META   = window.__OTT_REPO__ || {};
 const L1_OWNER  = L1_META.owner || (location.hostname.endsWith('.github.io') ? location.hostname.split('.')[0] : 'huzisada');
 const L1_REPO   = L1_META.repo  || (location.pathname.split('/').filter(Boolean)[0]) || 'ott-dashboard';
 const L1_BRANCH = 'main';
 const L1_PATH   = 'pipeline/sources.json';
-const L1_WF     = 'daily.yml';
-const L1_KEY    = 'ott_gh_pat';
-
-let L1_CFG   = window.__OTT_SRC_CONFIG__ || {description:'', sources:[], keywords:{}};
-let L1_SAVED = JSON.parse(JSON.stringify(L1_CFG.sources || []));  // dirty 比对基线
-let L1_SHA   = '';
-let L1_TOKEN = '';
-let L1_DIRTY = false;
-
-function l1Token(){ return L1_TOKEN || (localStorage.getItem(L1_KEY) || ''); }
-function l1Headers(extra){
-  return Object.assign({
-    'Authorization': 'Bearer ' + l1Token(),
-    'Accept': 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28'
-  }, extra || {});
-}
-function l1RepoUrl(p){ return `${L1_API}/repos/${L1_OWNER}/${L1_REPO}/${p}`; }
-function l1Encode(str){
-  const bytes = new TextEncoder().encode(str);
-  let bin = ''; for(const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin);
-}
-function l1Decode(b64){
-  const bin = atob(b64.replace(/\s/g, ''));
-  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
-}
-async function l1Fetch(url, opts){
-  const r = await fetch(url, Object.assign({cache:'no-store'}, opts || {}));
-  if(!r.ok){
-    let msg = r.status + ' ' + r.statusText;
-    try{ const d = await r.json(); if(d.message) msg = r.status + ': ' + d.message; }catch(_){}
-    if(r.status === 409 || r.status === 422) msg = '仓库配置已被其他设备更新，请重新打开面板再试';
-    throw new Error(msg);
-  }
-  return r;
-}
-/* 保存前必拉实时配置：拿最新 sha（乐观锁），并保留别人改过的 description/keywords */
-async function l1PullLive(){
-  const r = await l1Fetch(`${l1RepoUrl('contents/' + L1_PATH)}?ref=${L1_BRANCH}&t=${Date.now()}`,
-                          {headers: l1Headers()});
-  const d = await r.json();
-  L1_SHA = d.sha;
-  return JSON.parse(l1Decode(d.content));
-}
-async function l1Put(){
-  const body = {
-    message: `config: 订阅源配置更新 ${new Date().toISOString().slice(0,10)}`,
-    content: l1Encode(JSON.stringify(L1_CFG, null, 2) + '\n'),
-    sha: L1_SHA,
-    branch: L1_BRANCH
-  };
-  const r = await l1Fetch(l1RepoUrl('contents/' + L1_PATH), {
-    method:'PUT', headers: l1Headers({'Content-Type':'application/json'}),
-    body: JSON.stringify(body)
-  });
-  const d = await r.json();
-  L1_SHA = (d.content && d.content.sha) || L1_SHA;
-}
-async function l1Dispatch(){
-  await l1Fetch(l1RepoUrl(`actions/workflows/${L1_WF}/dispatches`), {
-    method:'POST', headers: l1Headers({'Content-Type':'application/json'}),
-    body: JSON.stringify({ref: L1_BRANCH})
-  });
-}
-async function l1CheckToken(tok){
-  const r = await fetch(L1_API + '/user', {
-    headers: {'Authorization':'Bearer ' + tok, 'Accept':'application/vnd.github+json'}
-  });
-  if(!r.ok) throw new Error(r.status === 401 ? '令牌无效或已过期' : '校验失败 HTTP ' + r.status);
-  const scopes = (r.headers.get('x-oauth-scopes') || '').split(',').map(s => s.trim());
-  if(!scopes.includes('repo')) throw new Error('令牌缺少 repo 权限（请生成 classic token 并勾选 repo）');
-  const u = await r.json();
-  return u.login || L1_OWNER;
-}
+let   L1_CFG    = window.__OTT_SRC_CONFIG__ || {description:'', sources:[], keywords:{}};
 
 /* 配置 → SOURCES：以仓库配置为唯一权威，data.js 只补充运行状态 */
 function l1RebuildSources(){
@@ -3200,102 +3125,45 @@ function l1RebuildSources(){
   SOURCES.length = 0; rows.forEach(r => SOURCES.push(r));
   if(typeof applySourcesToGrid === 'function') applySourcesToGrid();
 }
-/* SOURCES → 配置：任何操作后调用，自动 diff 出增删改 */
-function l1SyncFromSources(){
-  const base = new Map((L1_CFG.sources || []).map(s => [s.id, s]));
-  const next = SOURCES.map(s => {
-    const b = base.get(s.id) || {};
-    const o = Object.assign({}, b, {
-      id: s.id, name: s.name, cat: s.cat, type: s.type,
-      freq: s.freq || b.freq || 'workday',
-      list_url: s.url || b.list_url || '',
-      engine: s.engine || b.engine || 'static',
-      enabled: s.on !== false
-    });
-    if(s.max_items !== undefined && s.max_items !== null) o.max_items = s.max_items;
-    if(s.pages !== undefined && s.pages !== null) o.pages = s.pages;
-    if(s.rss) o.rss = s.rss;
-    if(!o.note) o.note = '';
-    return o;
-  });
-  L1_CFG.sources = next;
-  l1SetDirty(JSON.stringify(next) !== JSON.stringify(L1_SAVED));
-}
-function l1SetDirty(v){
-  L1_DIRTY = !!v;
-  const btn = document.getElementById('l1Save');
-  if(btn) btn.disabled = !L1_DIRTY;
-  const tip = document.getElementById('l1DirtyTip');
-  if(tip) tip.textContent = L1_DIRTY ? '● 有未保存的更改' : '配置已是最新';
-}
-function l1ToggleForm(force){
-  const f = document.getElementById('l1Form');
-  if(!f) return;
-  const show = (force === undefined) ? f.hidden : force;
-  f.hidden = !show;
-}
-function l1RenderConn(login){
-  const ok = !!l1Token();
-  const dot = document.getElementById('l1Dot'), st = document.getElementById('l1State');
-  if(dot) dot.className = 'l1-dot' + (ok ? ' on' : '');
-  if(st) st.textContent = ok
-    ? `已连接 ${login || L1_OWNER} · ${L1_OWNER}/${L1_REPO}（保存后写回仓库并立即重抓）`
-    : '未连接 · 只读模式（改动不会写回仓库）';
-}
 
-/* DOM 改造：连接条、保存按钮、去掉假的频率档、如实标注关键词规则 */
+/* 只读 UI：隐藏一切编辑控件，给出 GitHub 网页编辑入口 */
 function l1InjectUI(){
   const css = document.createElement('style');
   css.textContent = `
     .l1-bar{border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin:0 0 12px;background:rgba(255,255,255,.02)}
     .l1-bar-top{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted,#9aa4b2)}
-    .l1-bar-top button{margin-left:auto}
-    .l1-dot{width:8px;height:8px;border-radius:50%;background:#6b7280;flex:none}
-    .l1-dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
-    .l1-form{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
-    .l1-form p{font-size:11.5px;line-height:1.65;color:var(--muted,#9aa4b2);margin:0 0 8px}
-    .l1-form code{color:var(--accent)}
-    .l1-row{display:flex;gap:6px;flex-wrap:wrap}
-    .l1-row input{flex:1;min-width:160px;background:#0d1014;border:1px solid var(--line);border-radius:7px;color:#e6e9ef;padding:6px 9px;font-size:12px}
-    .l1-remember{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted,#9aa4b2);margin-top:8px}
-    .l1-msg{font-size:11px;color:var(--accent);margin-top:6px;min-height:14px}
-    .l1-dirty{font-size:11.5px;color:#e0b341;margin-right:auto}
+    .l1-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);flex:none}
+    .l1-bar-top a{margin-left:auto}
+    .l1-sub{font-size:11.5px;line-height:1.6;color:var(--muted,#9aa4b2);margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--line)}
     .l1-fixed{font-size:12px;color:var(--muted,#9aa4b2);padding:7px 9px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:7px}
-    .l1-note{color:#7c8798;font-weight:400;font-size:10.5px;margin-left:6px}`;
+    .l1-note{color:#7c8798;font-weight:400;font-size:10.5px;margin-left:6px}
+    /* 只读视图：隐藏一切可改控件，只保留源列表与运行状态 */
+    .l1-readonly .src-add,
+    .l1-readonly .src-row .actions,
+    .l1-readonly .src-editor,
+    .l1-readonly .err-banner .reset{display:none !important}
+    .l1-readonly .src-row{padding-right:4px}`;
   document.head.appendChild(css);
 
   const sub = document.querySelector('#modalMask .sub');
+  const cfgUrl = `https://github.com/${L1_OWNER}/${L1_REPO}/edit/${L1_BRANCH}/${L1_PATH}`;
+  document.getElementById('modalMask').classList.add('l1-readonly');
   if(sub){
-    sub.textContent = '配置写回仓库：开关、删除、新增、编辑保存后统一提交，并立即触发一次抓取。';
+    sub.textContent = '只读视图：可查看每个订阅源的抓取状态与最近抓取时间；配置由仓库统一管理。';
     sub.insertAdjacentHTML('afterend', `
       <div class="l1-bar">
         <div class="l1-bar-top">
-          <span class="l1-dot" id="l1Dot"></span>
-          <span id="l1State">未连接 · 只读模式</span>
-          <button type="button" class="btn btn-ghost btn-xs" id="l1Toggle">设置令牌</button>
+          <span class="l1-dot"></span>
+          <span>只读 · 配置来自 ${L1_OWNER}/${L1_REPO} 的 pipeline/sources.json，每日 06:17 自动抓取</span>
+          <a class="btn btn-ghost btn-xs" href="${cfgUrl}" target="_blank" rel="noopener">在 GitHub 修改配置</a>
         </div>
-        <div class="l1-form" id="l1Form" hidden>
-          <p>需要一个 <b>classic</b> 类型、勾选 <code>repo</code> 权限的 GitHub Personal Access Token。
-             令牌只保存在你本机浏览器，<b>不会写入仓库、不会上传到任何服务器</b>；不勾选「记住」则仅本次会话有效。</p>
-          <div class="l1-row">
-            <input id="l1Token" type="password" placeholder="ghp_xxx" autocomplete="off" spellcheck="false"/>
-            <button type="button" class="btn btn-primary btn-sm" id="l1Connect">连接</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="l1Clear">清除</button>
-          </div>
-          <label class="l1-remember"><input type="checkbox" id="l1Persist" checked/> 记住此令牌（仅存本机 localStorage）</label>
-          <div class="l1-msg" id="l1Msg"></div>
-        </div>
+        <p class="l1-sub">需要新增或停用信源时，点右上角在 GitHub 网页编辑并提交，会自动触发一次重新抓取（约 5 分钟生效）。本页无需登录、无需任何令牌。</p>
       </div>`);
   }
-  const foot = document.querySelector('#modalMask .modal-foot');
-  if(foot) foot.insertAdjacentHTML('beforeend', `
-      <span class="l1-dirty" id="l1DirtyTip">配置已是最新</span>
-      <button type="button" class="btn btn-primary btn-sm" id="l1Save" disabled>保存到 GitHub 并重新抓取</button>`);
-  const testBtn = document.getElementById('ns_test');
-  if(testBtn) testBtn.textContent = '检查 URL 格式';
 }
+
+/* 如实标注：频率只有每日一档；关键词规则当前管道不读取 */
 function l1PatchForm(){
-  // 频率下拉 → 固定如实文案（保留 hidden 值，旧代码取值逻辑不用改）
   const ns = document.getElementById('ns_freq');
   if(ns && ns.tagName === 'SELECT'){
     const w = document.createElement('div');
@@ -3310,7 +3178,6 @@ function l1PatchForm(){
     w.innerHTML = '每日 06:17（随主任务）<input type="hidden" data-edit-freq="' + idx + '" value="' + escapeHtml(sel.value) + '">';
     sel.parentNode.replaceChild(w, sel);
   });
-  // 关键词规则：如实标注「不影响抓取」
   document.querySelectorAll('#modalMask label').forEach(l => {
     if(/关键词规则/.test(l.textContent) && !l.dataset.l1){
       l.dataset.l1 = '1';
@@ -3326,105 +3193,21 @@ function l1PatchForm(){
   });
 }
 
-async function l1Connect(){
-  const input = document.getElementById('l1Token');
-  const msg = document.getElementById('l1Msg');
-  const tok = (input.value || '').trim();
-  if(!tok){ msg.textContent = '请先粘贴令牌'; return; }
-  msg.textContent = '校验中…';
-  try{
-    const login = await l1CheckToken(tok);
-    L1_TOKEN = tok;
-    if(document.getElementById('l1Persist').checked) localStorage.setItem(L1_KEY, tok);
-    else localStorage.removeItem(L1_KEY);
-    input.value = '';
-    l1RenderConn(login);
-    msg.textContent = '已连接，面板现在可写回仓库。';
-    l1ToggleForm(false);
-    await syncSourcesFromBackend();
-    renderSources();
-    l1SetDirty(false);
-  }catch(e){ msg.textContent = '连接失败：' + e.message; }
-}
-function l1Clear(){
-  L1_TOKEN = '';
-  localStorage.removeItem(L1_KEY);
-  document.getElementById('l1Token').value = '';
-  l1RenderConn('');
-  document.getElementById('l1Msg').textContent = '已清除本机令牌。';
-  l1ToggleForm(true);
-}
-async function l1SaveAll(){
-  if(!l1Token()){ toast('请先设置 GitHub 令牌'); l1ToggleForm(true); return; }
-  const btn = document.getElementById('l1Save');
-  if(btn){ btn.disabled = true; btn.textContent = '保存中…'; }
-  try{
-    // 以仓库实时配置为底，只覆盖 sources，避免覆盖别人改过的其它字段
-    const live = await l1PullLive();
-    L1_CFG = Object.assign({}, live, {sources: L1_CFG.sources});
-    await l1Put();
-    L1_SAVED = JSON.parse(JSON.stringify(L1_CFG.sources));
-    l1SetDirty(false);
-    toast('配置已写入仓库');
-    await l1Dispatch();
-    toast('已触发重新抓取，约 5 分钟后数据更新');
-  }catch(e){
-    toast('保存失败：' + e.message);
-  }finally{
-    if(btn){ btn.textContent = '保存到 GitHub 并重新抓取'; btn.disabled = !L1_DIRTY; }
-  }
-}
-
-/* 初始化：接管旧逻辑（一律用 window 赋值覆盖，避免重复函数声明自递归） */
+/* 初始化：只接管「配置重建」与「如实化文案」，不接管任何编辑行为 */
 (function l1Init(){
-  // 一次性迁移：旧的「假开关」localStorage 不再作为权威（现在 enabled 由仓库配置决定）
-  try{ localStorage.removeItem('ott_src_overrides'); }catch(_){}
+  // 清理历史上前端写回时代留下的本地状态
+  try{ localStorage.removeItem('ott_src_overrides'); localStorage.removeItem('ott_gh_pat'); }catch(_){}
 
   l1InjectUI();
-  l1RenderConn('');
   l1PatchForm();
 
   const _oldRender = window.renderSources;
   window.renderSources = function(){ _oldRender(); l1PatchForm(); };
 
   window.syncSourcesFromBackend = async function(){
-    try{
-      if(l1Token()){
-        const live = await l1PullLive();
-        L1_CFG   = live;
-        L1_SAVED = JSON.parse(JSON.stringify(live.sources || []));
-      }
-      l1RebuildSources();
-    }catch(e){
-      console.warn('[订阅源] 实时配置拉取失败，使用本地快照：', e.message);
-      l1RebuildSources();
-    }
+    l1RebuildSources();     // 纯本地数据来源，不发任何网络请求
     return [];
   };
-
-  const _oldClose = window.closeSourcesModal;
-  window.closeSourcesModal = function(opts){
-    if(L1_DIRTY && !confirm('有未保存的配置更改，确定关闭吗？更改将丢失。')) return;
-    _oldClose(opts);
-  };
-  const _oldOpen = window.openModal;
-  document.getElementById('btnSources').onclick = async function(){
-    if(L1_DIRTY && !confirm('有未保存的配置更改，重新打开会丢弃，继续吗？')) return;
-    await _oldOpen();
-    l1SetDirty(false);
-  };
-  const _oldAdd = document.getElementById('addSrc').onclick;
-  document.getElementById('addSrc').onclick = async function(e){
-    await _oldAdd(e);
-    l1SyncFromSources();
-  };
-  // 旧监听器之后同步配置（setTimeout 保证在其后执行；dirty 用配置 diff 判定，无害操作不会误标）
-  document.getElementById('srcList').addEventListener('click', () => setTimeout(l1SyncFromSources, 0));
-
-  document.getElementById('l1Toggle').onclick  = () => l1ToggleForm();
-  document.getElementById('l1Connect').onclick = l1Connect;
-  document.getElementById('l1Clear').onclick   = l1Clear;
-  document.getElementById('l1Save').onclick    = l1SaveAll;
 
   // 页面启动后以仓库配置重建一次 SOURCES（覆盖旧的「从卡片推断」结果）
   window.syncSourcesFromBackend().then(() => { renderSources(); });
