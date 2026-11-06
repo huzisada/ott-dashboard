@@ -1600,7 +1600,7 @@ function applySrcOverrides(){
   SOURCES.forEach(s=>{ const v = o[_srcKey(s)]; if(v !== undefined){ s.on = !!v; if(!s.on) s.status = 'paused'; } });
 }
 
-/* 用户手动新增的订阅源：先暂存到 L1_CFG，保存后由 GitHub Actions 真实抓取 */
+/* 历史遗留的本地自定义源缓存。当前页面为只读视图，新增源统一在 GitHub 网页改配置 */
 function customSources(){
   try{ return JSON.parse(localStorage.getItem('ott_custom_sources') || '[]'); }catch(e){ return []; }
 }
@@ -1932,7 +1932,7 @@ document.getElementById('srcList').addEventListener('click', async e=>{
     const idx = +del.dataset.del;
     const s = SOURCES[idx];
     if(!s) return;
-    if(!confirm(`确定删除「${s.name}」？保存后将从仓库配置移除，不再抓取新内容。`)) return;
+    if(!confirm(`确定删除「${s.name}」？此操作仅影响本页显示；停用信源请在 GitHub 网页编辑 pipeline/sources.json。`)) return;
     if(s.custom) removeCustomSource(s.id);   // 清理本地持久化的自定义源
     SOURCES.splice(idx,1);
     if(s.id){
@@ -1959,7 +1959,7 @@ document.getElementById('srcList').addEventListener('click', async e=>{
     if(covered){
       toast(`✓ ${s.name} 已收录在抓取管道中，当前展示其最新资讯`);
     }else if(okUrl){
-      toast(`✓ ${s.name} 已加入待保存配置，点「保存到 GitHub」后生效`);
+      toast(`✓ ${s.name} 的 URL 格式有效（本页只读，新增源请到 GitHub 网页编辑 pipeline/sources.json）`);
     }else{
       toast(`✗ ${s.name} 的 URL 无效，请检查格式（需 http/https 开头）`);
     }
@@ -2111,9 +2111,8 @@ document.getElementById('ns_test').onclick = async ()=>{
 document.getElementById('ns_switch').addEventListener('click', e=>{
   e.currentTarget.classList.toggle('on');
 });
-/* 添加订阅源（无后端版）：
-   - 已收录源（同名/同域，如量子位）→ 直接绑定管道真实数据并启用
-   - 全新源 → 暂存到配置，保存后由管道真实抓取 */
+/* 历史遗留的「添加订阅源」处理函数。只读视图已隐藏新增表单，
+   此函数仅保留 URL 格式检查能力；真正新增源请在 GitHub 网页编辑 sources.json */
 document.getElementById('addSrc').onclick = async ()=>{
   const name = document.getElementById('ns_name').value.trim();
   if(!name){ toast('请输入订阅源名称'); return; }
@@ -2154,18 +2153,19 @@ document.getElementById('addSrc').onclick = async ()=>{
     id, name, cat, type, c,
     s: name.slice(0,1), time:'待接入',
     status: stub.status,
-    items:[{t:'已加入待保存配置 · 点「保存到 GitHub」触发抓取后展示真实内容', h:0, d:'待补充', u:'#'}],
+    items:[{t:'本页只读 · 新增源请在 GitHub 网页编辑 pipeline/sources.json 后由工作流抓取', h:0, d:'待补充', u:'#'}],
   });
   if(enabled) addCustomSource({id, name, cat, type, freq, url, rss, keyword_rules, on:true});
   _nsReset();
   renderSources();
   applySourcesToGrid();
   render();
-  toast(enabled ? ('已加入待保存配置：'+name+'（点「保存到 GitHub」后生效）') : ('已添加（已暂停）：'+name));
+  toast(`本页只读：新增「${name}」请到 GitHub 网页编辑 pipeline/sources.json`);
 };
 
 /* ============================================================
-   数据新鲜度：每日北京时间 06:17 自动抓取并更新（GitHub Actions 定时任务）
+   数据新鲜度：每日北京时间 06:17 起自动抓取，当天另有多次检查，
+   发现「今天还没抓」就自动补抓；超过 30 小时未更新会由工作流开 Issue 告警。
    页面端：开放标签内每 20 分钟静默校验一次最新 data.js（不显示倒计时）
    ============================================================ */
 const META = RAW.meta || {};
@@ -2207,9 +2207,10 @@ function renderDataStatus(){
   if(lf){
     const h = hoursSince(META.generated_at);
     lf.textContent = fmtFetchTime(META.generated_at);
-    // 数据陈旧（>24h）时高亮提醒，避免「以为是最新」的误判
-    if(h!==null && h>24){
-      lf.textContent += `（已 ${Math.floor(h/24)} 天前，建议重新抓取）`;
+    // 数据陈旧（>30h）时高亮提醒。阈值放宽到 30h：自动补抓窗口持续到下午，
+    // 24h 会在补抓完成前误报；30h 仍能在真正连续漏跑时报警。
+    if(h!==null && h>30){
+      lf.textContent += `（已 ${Math.floor(h)} 小时未更新，自动补抓未成功）`;
       lf.style.color = '#ff6b4a';
     }
   }
@@ -2217,7 +2218,7 @@ function renderDataStatus(){
   if(ps){
     const src = (RAW.sources||[]).filter(x=>x.type==='policy');
     const bad = src.filter(x=>x.status!=='ok');
-    ps.textContent = bad.length ? `政策源 ${src.length-bad.length}/${src.length} 正常，${bad.length} 个异常` : `政策源 ${src.length} 个 · 每日 06:17 自动抓取`;
+    ps.textContent = bad.length ? `政策源 ${src.length-bad.length}/${src.length} 正常，${bad.length} 个异常` : `政策源 ${src.length} 个 · 每日自动抓取（漏跑自动补抓）`;
     ps.style.color = bad.length ? '#ff6b4a' : '';
   }
 }
@@ -2269,13 +2270,13 @@ async function doRefresh(){
     if(!m) throw new Error('数据格式异常');
     const fresh = JSON.parse(m[1]);
     const stamp = (fresh.meta||{}).generated_at || '';
-    // 3) 刷新通知与倒计时
+    // 3) 重新读取 data.js 后刷新通知（注意：这是读取静态数据文件，不是发起抓取）
     NOTIFS = buildNotifs(true);
     notifExpanded = false;
     if(document.body.classList.contains('notif-open')) renderNotif();
     const wait = Math.max(0, 600 - (Date.now()-t0));
     if(stamp && stamp !== _buildAtLoad){
-      toast(`已重新抓取：${(fresh.meta||{}).total||0} 条（${fmtFetchTime(stamp)}）`);
+      toast(`已载入最新数据：${(fresh.meta||{}).total||0} 条（${fmtFetchTime(stamp)}）`);
       setTimeout(()=>{ if(btn) btn.classList.remove('spinning'); refreshing = false; location.reload(); }, 700);
       return;
     }
@@ -3140,7 +3141,7 @@ function l1InjectUI(){
       <div class="l1-bar">
         <div class="l1-bar-top">
           <span class="l1-dot"></span>
-          <span>只读 · 配置来自 ${L1_OWNER}/${L1_REPO} 的 pipeline/sources.json，每日 06:17 自动抓取</span>
+          <span>只读 · 配置来自 ${L1_OWNER}/${L1_REPO} 的 pipeline/sources.json，每日自动抓取（漏跑自动补抓）</span>
           <a class="btn btn-ghost btn-xs" href="${cfgUrl}" target="_blank" rel="noopener">在 GitHub 修改配置</a>
         </div>
         <p class="l1-sub">需要新增或停用信源时，点右上角在 GitHub 网页编辑并提交，会自动触发一次重新抓取（约 5 分钟生效）。本页无需登录、无需任何令牌。</p>

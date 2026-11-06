@@ -1,25 +1,43 @@
 name: OTT 看板 · 每日自动抓取与发布
 
-# 触发：
-#   1) 每天北京时间 06:17 自动跑（GitHub cron 为 UTC，06:17 CST = 22:17 UTC 前一天）
-#      刻意避开整点：GitHub 整点高负载会让定时任务延迟数小时（实测曾延迟近 4 小时）
-#   2) 允许在 Actions 页面手动触发（workflow_dispatch），方便调试
-#   3) 有人在 GitHub 网页或 PR 里改了 pipeline/sources.json 并推到 main → 立即重抓并重建站点
-#      paths 过滤是必要的：本工作流自己会提交 data.js，不过滤会有循环触发风险
+# ============================================================================
+# 设计原则：GitHub 的 schedule 是「尽力而为」，官方文档明确写了高负载时
+#   "some queued jobs may be dropped"（排队任务可能被丢弃）。
+#   实测 2026-11-05 的定时晚了 3h52m；2026-11-06 的定时整天没启动。
+#   所以不再依赖「某一次 cron 必须命中」，改成【状态驱动的自愈】：
+#     · 一天给多次触发机会（早晨窗口 + 下午兜底）
+#     · 每次先检查仓库 data.js 的 generated_at 是不是「北京时间今天」
+#     · 已经是今天 → 直接跳过（只跑 checkout + 一个 Python 判断，约 10 秒）
+#     · 还不是今天 → 执行完整抓取与部署
+#     · 超过 30 小时仍未更新 → 开 Issue 告警（覆盖「根本没启动」的静默漏跑）
+#   这样即使 GitHub 丢掉大半定时，只要有一次跑起来就能补上当天数据。
+# ============================================================================
+# 用最简表达式，避免 run-name 解析失败导致整个工作流被判为无效
+run-name: "OTT 抓取 · ${{ github.event_name }}"
+
 on:
   schedule:
+    # 主任务：北京时间 06:17（UTC 22:17），正常情况下当天只会真正抓这一次
     - cron: '17 22 * * *'
+    # 看门狗：北京时间 06:43、07:43、08:43、09:43、10:43、11:43
+    #   主任务被丢弃或延迟时，谁先发现「今天还没抓」谁补上
+    - cron: '43 22,23,0,1,2,3 * * *'
+    # 下午兜底：北京时间 14:23。若早晨全部被丢弃，这是最后一次机会
+    - cron: '23 6 * * *'
+  # 手动触发：Actions 页面 Run workflow，始终执行完整抓取
   workflow_dispatch:
+  # 在 GitHub 网页改订阅源配置推到 main → 立即重抓并重建站点
   push:
     branches: [main]
     paths:
       - 'pipeline/sources.json'
 
-# 权限：contents 用于提交最新 data.js；pages/id-token 用于部署 GitHub Pages
+# contents: 提交 data.js；pages/id-token: 部署 Pages；issues: 漏跑与失败告警
 permissions:
   contents: write
   pages: write
   id-token: write
+  issues: write
 
 # 避免并发重叠：同一时间只跑一个抓取任务
 concurrency:
@@ -30,34 +48,104 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      need: ${{ steps.guard.outputs.need }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------------------
+      # 守卫：判断本次是否需要真正抓取。用 runner 自带的 python3，
+      # 不装依赖、不开浏览器，跳过时整个 job 只花十几秒。
+      # ------------------------------------------------------------------
+      - name: 判断是否需要抓取
+        id: guard
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os, datetime
+          from pathlib import Path
+
+          out  = Path(os.environ['GITHUB_OUTPUT'])
+          ev   = os.environ.get('EVENT_NAME', '')
+          bj   = datetime.timezone(datetime.timedelta(hours=8))
+          now  = datetime.datetime.now(datetime.timezone.utc)
+          age  = -1
+          today = False
+
+          try:
+              s = Path('data.js').read_text()
+              d = json.loads(s[s.index('{'):s.rindex('}')+1])
+              ts = d['meta']['generated_at'].replace('Z', '+00:00')
+              t  = datetime.datetime.fromisoformat(ts)
+              if t.tzinfo is None:
+                  t = t.replace(tzinfo=datetime.timezone.utc)
+              age = round((now - t).total_seconds() / 3600, 1)
+              today = t.astimezone(bj).date() == now.astimezone(bj).date()
+              why = f"上次抓取 {age} 小时前（北京时间 {t.astimezone(bj):%Y-%m-%d %H:%M}）"
+          except Exception as e:
+              why = f"读取 data.js 失败（{e}），保守起见执行抓取"
+
+          if ev != 'schedule':
+              need, why = 'true', f"{ev} 事件，强制完整抓取；{why}"
+          elif today:
+              need, why = 'false', f"今日已抓取，跳过；{why}"
+          else:
+              need, why = 'true', f"今日尚未抓取，执行补抓；{why}"
+
+          # 静默漏跑告警：数据超过 30 小时没更新，说明自愈已连续失败
+          stale = 'true' if (need == 'true' and age > 30) else 'false'
+          out.write_text(f"need={need}\nage={age}\nstale={stale}\n")
+          print(why)
+          PY
+
+      - name: 漏跑告警（数据超过 30 小时未更新）
+        if: ${{ steps.guard.outputs.stale == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const day  = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+            const title = `OTT 看板漏跑告警 ${day}`;
+            const age = '${{ steps.guard.outputs.age }}';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: 'open'
+            });
+            if (!issues.find(i => i.title === title)) {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo, title,
+                body: `数据已 ${age} 小时未更新，自动补抓机制连续多次未能完成。\n\n检查日志：${{ github.server_url }}/${{ github.repository }}/actions/workflows/daily.yml`
+              });
+            }
+
       - name: Set up Python
+        if: ${{ steps.guard.outputs.need == 'true' }}
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: 安装 Python 依赖
+        if: ${{ steps.guard.outputs.need == 'true' }}
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: 安装 Playwright Chromium（browser 引擎源需要）
+        if: ${{ steps.guard.outputs.need == 'true' }}
         run: python -m playwright install --with-deps chromium
 
-      - name: 运行抓取管道（抓取 → AI 处理 → 导出 data.js）
+      - name: 运行抓取管道（抓取 → 正文摘录 → AI 处理 → 导出 data.js）
+        if: ${{ steps.guard.outputs.need == 'true' }}
         run: bash pipeline/run_pipeline.sh "$GITHUB_WORKSPACE"
 
       - name: 组装静态站点
-        if: success()
+        if: ${{ success() && steps.guard.outputs.need == 'true' }}
         env:
           OTT_BUILD_ID: ${{ github.sha }}
         run: bash pipeline/build_site.sh
 
       - name: 提交最新 data.js（保留历史，便于追溯）
-        if: success()
+        if: ${{ success() && steps.guard.outputs.need == 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -70,13 +158,13 @@ jobs:
           fi
 
       - name: 上传 Pages 产物
-        if: success()
+        if: ${{ success() && steps.guard.outputs.need == 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
       - name: 失败时开 Issue 告警
-        if: failure()
+        if: ${{ failure() && steps.guard.outputs.need == 'true' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -93,6 +181,7 @@ jobs:
 
   deploy:
     needs: build-and-deploy
+    if: ${{ needs.build-and-deploy.outputs.need == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages

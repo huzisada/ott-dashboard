@@ -62,12 +62,17 @@ run_pipeline.sh 一键执行上面三步（失败自动重试 2 次 + 写告警�
 
 ## 定时抓取
 
-当前每次执行产出约 **168 条**资讯（原始 454 条 → 过滤陈旧 242 / 去重 44）。
+线上由 `.github/workflows/daily.yml` 调度，采用**状态驱动的自愈**而非单一 cron：
+北京时间 06:17 主任务 + 06:43～11:43 每小时看门狗 + 14:23 兜底，共 8 次触发机会。
+每次先检查 `data.js` 的 `generated_at` 是否已是「北京时间今天」，是则秒跳，否则立即补抓；
+超过 30 小时仍未更新会开 Issue 告警。原因见 `DEPLOY.md`：GitHub 定时任务是尽力而为的，
+排队任务可能被丢弃。
 
-推荐 cron（工作日每天 08:30 抓一次，政策类可加密）：
+本地想手动跑一次完整管道（不经过 GitHub）：
 
-```cron
-30 8 * * 1-5  /path/to/pipeline/run_pipeline.sh >> /path/to/pipeline/data/cron.log 2>&1
+```bash
+export PATH="/root/.pyenv/shims:/root/.pyenv/bin:$PATH"
+bash pipeline/daily.sh
 ```
 
 ---
@@ -77,8 +82,8 @@ run_pipeline.sh 一键执行上面三步（失败自动重试 2 次 + 写告警�
 | 验收项 | 结果 |
 |---|---|
 | 首屏加载 < 3s | ✅ **0.51s** |
-| 每日自动更新 | ✅ GitHub Actions 每天北京时间 06:17 抓取并发布；开放标签页每 20 分钟静默校验一次 `data.js` |
-| 订阅源管理 | ✅ 开关/删除/新增/编辑真实写回 `pipeline/sources.json` 并立即触发抓取（需在面板填一次 GitHub PAT，详见 `DEPLOY.md`） |
+| 每日自动更新 | ✅ GitHub Actions 清晨自动抓取 + 漏跑自动补抓（一天 8 次机会）；开放标签页每 20 分钟静默校验一次 `data.js` |
+| 订阅源管理 | ✅ 页面零令牌纯只读；在 GitHub 网页改 `pipeline/sources.json` 推到 main 后自动触发重抓，有 commit 记录可 Revert |
 | 每条摘要可跳原文 | ✅ 77 条链接全部有效 |
 | 深色样式一致 | ✅ 沿用原设计 token（`#0BC5A0` / `#08090b`） |
 | 无 JS 报错 / 资源 404 | ✅ 无 |
