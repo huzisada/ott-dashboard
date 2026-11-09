@@ -1174,7 +1174,7 @@
           <div>
             <label>抓取频率</label>
             <select id="ns_freq">
-              <option value="workday">每日 06:17（随主任务）</option>
+              <option value="workday">每日凌晨（随主任务）</option>
             </select>
           </div>
         </div>
@@ -1633,8 +1633,8 @@ const SRC_TYPE_LABEL = {
   media:'媒体', data:'数据', policy:'政策', competitor:'竞品',
   vendor:'厂商', short_drama:'短剧', integrated:'一体化',
 };
-/* 抓取由 GitHub Actions 每日 06:17 统一调度；freq 仅为历史配置，不再分档 */
-const SRC_FREQ_LABEL = { workday:'每日 06:17', hourly:'每日 06:17', realtime:'每日 06:17' };
+/* 抓取由 GitHub Actions 每日凌晨 统一调度；freq 仅为历史配置，不再分档 */
+const SRC_FREQ_LABEL = { workday:'每日凌晨', hourly:'每日凌晨', realtime:'每日凌晨' };
 let SOURCES = DATA
   // 过滤掉聚合占位卡片（id 在下面集合里的 card 不属于订阅源，只是展示用的聚合视图）
   .filter(c => !['term','plat','report','vendor','drama','integrated'].includes(c.id))
@@ -1795,7 +1795,7 @@ function _renderSrcRow(s, idx){
         </div>
         <div class="meta">
           ${escapeHtml(s.cat||'自定义')}
-          <span class="sep">·</span>${SRC_FREQ_LABEL[s.freq]||'每日 06:17'}
+          <span class="sep">·</span>${SRC_FREQ_LABEL[s.freq]||'每日凌晨'}
           <span class="sep">·</span>最近抓取：${_fmtTime(s.last_fetch_time)}
           <span class="sep">·</span><span style="color:${isErr?'#f87171':(isPaused?'#fbbf24':'#4ade80')}">${_srcStatusBadge(status)}</span>
           ${rulesHtml}
@@ -1835,7 +1835,7 @@ function _renderSrcEditor(s, idx){
         <div>
           <label>抓取频率</label>
           <select data-edit-freq="${idx}">
-            <option value="workday" selected>每日 06:17（随主任务）</option>
+            <option value="workday" selected>每日凌晨（随主任务）</option>
           </select>
         </div>
       </div>
@@ -2164,7 +2164,7 @@ document.getElementById('addSrc').onclick = async ()=>{
 };
 
 /* ============================================================
-   数据新鲜度：每日北京时间 06:17 起自动抓取，当天另有多次检查，
+   数据新鲜度：每日北京时间凌晨起自动抓取，当天另有多次检查，
    发现「今天还没抓」就自动补抓；超过 30 小时未更新会由工作流开 Issue 告警。
    页面端：开放标签内每 20 分钟静默校验一次最新 data.js（不显示倒计时）
    ============================================================ */
@@ -3155,14 +3155,14 @@ function l1PatchForm(){
   if(ns && ns.tagName === 'SELECT'){
     const w = document.createElement('div');
     w.className = 'l1-fixed';
-    w.innerHTML = '每日 06:17（随主任务）<input type="hidden" id="ns_freq" value="workday">';
+    w.innerHTML = '每日凌晨（随主任务）<input type="hidden" id="ns_freq" value="workday">';
     ns.parentNode.replaceChild(w, ns);
   }
   document.querySelectorAll('#srcList select[data-edit-freq]').forEach(sel => {
     const idx = sel.getAttribute('data-edit-freq');
     const w = document.createElement('div');
     w.className = 'l1-fixed';
-    w.innerHTML = '每日 06:17（随主任务）<input type="hidden" data-edit-freq="' + idx + '" value="' + escapeHtml(sel.value) + '">';
+    w.innerHTML = '每日凌晨（随主任务）<input type="hidden" data-edit-freq="' + idx + '" value="' + escapeHtml(sel.value) + '">';
     sel.parentNode.replaceChild(w, sel);
   });
   document.querySelectorAll('#modalMask label').forEach(l => {
