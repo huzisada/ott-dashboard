@@ -192,6 +192,10 @@
     animation:fade .4s ease both
   }
   .card:hover{border-color:var(--line-strong);transform:translateY(-2px);box-shadow:0 18px 40px -24px rgba(0,0,0,.9)}
+  .card.hot-card{border-color:rgba(255,122,89,.34)}
+  .card.hot-card .src-icon{box-shadow:0 8px 22px -8px var(--c,#ff7a59)}
+  .card.hot-card .tag.hot-tag{color:#ff9b7d;border-color:rgba(255,122,89,.42)}
+  .hot-src{color:var(--tx-dim2);font-size:10.5px}
   @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
   .card-head{display:flex;align-items:flex-start;gap:12px}
@@ -1232,6 +1236,7 @@ const NAV = [
   {id:'competitor',  label:'竞品动态', icon:'activity'},
   {id:'daily',       label:'资讯日报', icon:'news'},
   {id:'data',        label:'行业数据', icon:'bar'},
+  {id:'hot',         label:'热点节目', icon:'play'},
   {id:'policy',      label:'政策动态', icon:'file'},
   {id:'inspiration', label:'灵感收集', icon:'bulb'},
   {id:'settings',    label:'设置',     icon:'gear'},
@@ -1244,6 +1249,7 @@ const ICONS = {
   bar:'<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
   file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
   bulb:'<path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1.4.5 2.6 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/>',
+  play:'<circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/>',
   msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
   news:'<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/>',
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10.6 3V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
@@ -1271,6 +1277,37 @@ const DATA = (RAW.cards || []).map(c=>({
 const DATA_ALL = DATA.slice();
 
 /* ============================================================
+   热点节目（纯前端聚合视图）
+   - 不新增订阅源、不改动 data.js：从全站真实条目中筛出节目热榜类内容
+   - 排除含「总局 / 关于 / 通知 / 标准 / 指标 / 计算方法」等的政策标准类公文，避免误收
+   - 复用原条目 id，AI 深度总结、原文溯源、内容摘要仍指向原信源
+   ============================================================ */
+const HOT_RE      = /热榜|剧集|综艺|收视|热播|大屏点播|点播榜|期待指数|角色热度|节目榜/;
+const HOT_EXCLUDE = /总局|工信部|关于|通知|公示|公告|印发|标准|规范|指标|计算方法|技术要求|测量算法|数据采集|管理办法|征求意见/;
+function buildHotCard(){
+  const seen = new Set();
+  const rows = [];
+  DATA_ALL.forEach(c => (c.items||[]).forEach(it => {
+    if(!HOT_RE.test(it.t) || HOT_EXCLUDE.test(it.t)) return;
+    const key = (it.u && it.u!=='#' && it.u!=='待补充') ? it.u : it.t;
+    if(seen.has(key)) return;
+    seen.add(key);
+    rows.push(it);
+  }));
+  rows.sort((a,b)=>(b.h||0)-(a.h||0));
+  return {
+    id:'hot_program', name:'热点节目', cat:'热点节目', type:'media', agg:true,
+    c:'#ff7a59', s:'热', time:`全站聚合 · 按热度排序 · 共 ${rows.length} 条`,
+    items: rows.slice(0,15)
+  };
+}
+const HOT_CARD = buildHotCard();
+function hotSourceName(id){
+  for(const c of DATA_ALL) if((c.items||[]).some(x=>x.id===id)) return c.name;
+  return '';
+}
+
+/* ============================================================
    渲染
    ============================================================ */
 const grid = document.getElementById('grid');
@@ -1282,7 +1319,7 @@ let keyword = '';
 let cardExpanded = {};
 
 const TITLES = {
-  home:'OTT 行业资讯', competitor:'竞品动态对标', data:'行业数据与报告',
+  home:'OTT 行业资讯', competitor:'竞品动态对标', data:'行业数据与报告', hot:'热点节目 · 剧集与综艺',
   policy:'政策动态监控', inspiration:'灵感收集箱', feedback:'意见反馈', settings:'设置'
 };
 const EMPTY = {
@@ -1304,6 +1341,7 @@ function navHTML(){
 function refreshNav(){ nav.innerHTML = navHTML(); }
 function matchNav(card){
   if(activeNav==='home') return true;
+  if(activeNav==='hot') return card.id==='hot_program';
   if(activeNav==='competitor') return card.cat==='竞品' || card.cat==='厂商动态';
   if(activeNav==='data') return card.cat==='数据机构'||card.cat==='报告';
   if(activeNav==='policy') return card.cat==='政策';
@@ -1328,7 +1366,10 @@ function render(){
     return;
   }
 
-  let cards = DATA.filter(matchNav).map(c=>({...c, items:c.items.filter(it=>matchKw(it,c))}))
+  const base = (activeNav==='hot')
+    ? [...DATA, HOT_CARD]
+    : (activeNav==='home' && HOT_CARD.items.length ? [HOT_CARD, ...DATA] : DATA);
+  let cards = base.filter(matchNav).map(c=>({...c, items:c.items.filter(it=>matchKw(it,c))}))
                    .filter(c=>c.items.length>0);
 
   if(cards.length===0){
@@ -1351,7 +1392,7 @@ function render(){
         <span class="cnt">+${c.items.length - LIMIT}</span>
       </button>` : '';
     return `
-    <article class="card">
+    <article class="card${c.agg?' hot-card':''}">
       <div class="card-head">
         ${(()=>{
           const src = SOURCES.find(s => s.id===c.id || s.name===c.name);
@@ -1364,9 +1405,11 @@ function render(){
             const src = SOURCES.find(s => s.id===c.id || s.name===c.name);
             const t = (src && src.type) || c.type || 'media';
             const typeLabel = SRC_TYPE_LABEL[t] || '媒体';
-            const uniq = (typeLabel === c.cat)
-              ? `<span class="tag type ${t}">${typeLabel}</span>`
-              : `<span class="tag type ${t}">${typeLabel}</span><span class="tag">${c.cat}</span>`;
+            const uniq = c.agg
+              ? `<span class="tag type ${t} hot-tag">全站聚合</span><span class="tag">${c.cat}</span>`
+              : (typeLabel === c.cat
+                  ? `<span class="tag type ${t}">${typeLabel}</span>`
+                  : `<span class="tag type ${t}">${typeLabel}</span><span class="tag">${c.cat}</span>`);
             return uniq;
           })()}</h3>
           <time>${c.time}</time>
@@ -1383,6 +1426,7 @@ function render(){
               <div class="item-foot">
                 <span class="heat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s4 4.5 4 8a4 4 0 0 1-8 0c0-3.5 4-8 4-8z"/><path d="M12 22a6 6 0 0 0 6-6c0-3-2-5-3-6 .2 1.6-.5 2.5-1.2 2.9C13.3 9.6 12 6 12 6s-1.3 3.6-1.8 6.9C9.5 12.5 8.8 11.6 9 10c-1 1-3 3-3 6a6 6 0 0 0 6 6z" opacity=".55"/></svg>${it.h} 热度</span>
                 <span>${it.d}</span>
+                ${c.agg ? `<span class="hot-src">${escapeHtml(hotSourceName(it.id))}</span>` : ''}
                 ${it.id?`<button class="item-deep" data-id="${it.id}" title="AI 深度总结" aria-label="AI 深度总结">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 2.4 1 4.4 2.5 5.8L5 22l4.4-2.4A8 8 0 1 0 12 2z"/></svg>AI 总结</button>`:''}
               </div>
