@@ -748,6 +748,19 @@
     border-top:1px dashed var(--line);padding-top:8px;
   }
   .tf-note b{color:var(--accent);font-weight:600}
+  /* 日期不精确条目已纳入的可视化凭证：一行带原文链接的样例 */
+  .tf-included{
+    grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;
+    font-size:10.5px;color:var(--tx-dim);
+    border-top:1px dashed var(--line);padding-top:7px;
+  }
+  .tf-included>span{color:var(--accent);font-weight:600;white-space:nowrap}
+  .tf-included a{
+    color:var(--tx-mid);text-decoration:none;min-width:0;max-width:250px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .tf-included a:hover{color:var(--accent)}
+  .tf-included em{font-style:normal;color:var(--tx-dim2);white-space:nowrap}
   @media(max-width:1180px){
     .topflash{grid-template-columns:1fr;gap:10px}
     .tf-head{border-right:none;border-bottom:1px dashed var(--line);padding:0 0 8px}
@@ -2936,23 +2949,51 @@ function _dailySectionTitle(cat){
     : (cat==='行业') ? '行业动态'
     : '其他动态';
 }
+/* ============ 日期精度分档 ============
+   抓取管道对部分信源只能解析到「年月」（栏目页 URL 内嵌 /202611/），
+   另有条目原文完全没给发布日期。项目要求「信息源未覆盖的标注待补充、禁止编造」，
+   所以不能因为格式不是严格 YYYY-MM-DD 就把它们静默丢弃：
+   全部纳入候选池，按精度分档排序，展示时如实标注，绝不推测具体日期。 */
+function dateGrade(d){
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d||'')) return 'day';
+  if(/^\d{4}-\d{2}（月精度）$/.test(d||'')) return 'month';
+  return 'unknown';
+}
+function dateMonth(d){ const m=(d||'').match(/^(\d{4}-\d{2})/); return m ? m[1] : ''; }
+function dateLabel(d){
+  const g = dateGrade(d);
+  return g==='day' ? d.slice(5) : g==='month' ? Number(d.slice(5,7))+' 月' : '时间待补充';
+}
+function dateTitle(d){
+  const g = dateGrade(d);
+  return g==='day' ? '原文发布日期：'+d
+       : g==='month' ? '原文只能定位到 '+dateMonth(d)+'，未推测具体日期'
+       : '原文未提供可解析的发布日期，按「待补充」标注';
+}
 function dailyPool(){
-  const dates = [];
-  DATA.forEach(c=>(c.items||[]).forEach(it=>{ if(/^\d{4}-\d{2}-\d{2}$/.test(it.d||'')) dates.push(it.d); }));
-  if(!dates.length) return null;
-  const latest = dates.sort().pop();
-  let pool = flatItems().filter(({it})=>it.d===latest);
-  let scope = latest;
-  // 当日条目太少（<6）→ 扩展为近 7 天，保证有可读内容
-  if(pool.length < 6){
+  const all = flatItems();
+  const exact = [];
+  all.forEach(({it})=>{ if(dateGrade(it.d)==='day') exact.push(it.d); });
+  // latest 只认「精确到日」的真实发布日期；没有也不能编造，留空由 UI 标注待补充
+  const latest = exact.length ? exact.sort().pop() : '';
+  const latestMonth = latest ? latest.slice(0,7) : bjFetchDay(META.generated_at).slice(0,7);
+
+  // ① 精确到日：优先最新一天，不足 6 条扩到近 7 天
+  let pool = latest ? all.filter(({it})=>it.d===latest) : [];
+  if(pool.length < 6 && latest){
     const t = new Date(latest + 'T00:00:00').getTime();
-    const p7 = flatItems().filter(({it})=>{
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(it.d||'')) return false;
+    const p7 = all.filter(({it})=>{
+      if(dateGrade(it.d)!=='day') return false;
       const dt = new Date(it.d + 'T00:00:00').getTime();
       return dt <= t && dt >= t - 6*86400e3;
     });
-    if(p7.length > pool.length){ pool = p7; scope = latest; }
+    if(p7.length > pool.length) pool = p7;
   }
+  // ② 仅精确到月：全部纳入（按月份倒序排），不再挡在门外
+  pool = pool.concat(all.filter(({it})=> dateGrade(it.d)==='month'));
+  // ③ 时间待补充：原文没给日期，同样纳入，排在最后并明确标注
+  pool = pool.concat(all.filter(({it})=> dateGrade(it.d)==='unknown'));
+
   // 同一标题在多个源出现时只保留热度最高的一条
   const seen = new Map();
   pool.forEach(x=>{
@@ -2961,11 +3002,20 @@ function dailyPool(){
     if(!prev || (x.it.h||0) > (prev.it.h||0)) seen.set(k, x);
   });
   pool = [...seen.values()];
-  // 先按发布日期倒序、同日再按热度倒序。
-  // 旧逻辑只按热度排，会让过去一周高热度的旧公告长期霸占「今日重点速览」。
-  pool.sort((a,b)=> (b.it.d||'').localeCompare(a.it.d||'') || (b.it.h||0)-(a.it.h||0));
+
+  // 排序：精确到日 > 仅到月份 > 时间待补充。
+  // 前两档各自按日期/月份倒序、同档再按热度；不把低精度条目伪装成「今日」。
+  const G = {day:0, month:1, unknown:2};
+  pool.sort((a,b)=>{
+    const ga = G[dateGrade(a.it.d)], gb = G[dateGrade(b.it.d)];
+    if(ga !== gb) return ga - gb;
+    if(ga === 2) return (b.it.h||0) - (a.it.h||0);
+    return (b.it.d||'').localeCompare(a.it.d||'') || (b.it.h||0) - (a.it.h||0);
+  });
+  const grades = {day:0, month:0, unknown:0};
+  pool.forEach(x=>grades[dateGrade(x.it.d)]++);
   // fetchDay = 本次抓取的北京日期；latest = 库里最新「文章发布日期」，两者不是一回事
-  return {latest, pool, scope, fetchDay: bjFetchDay(META.generated_at)};
+  return {latest, pool, scope:latest, fetchDay: bjFetchDay(META.generated_at), grades};
 }
 
 /* 今日重点速览（TOP3）· 卡片区顶部横幅
@@ -2977,14 +3027,19 @@ function renderTopFlash(){
   const d = dailyPool();
   if(!d || !d.pool.length){ box.hidden = true; box.innerHTML = ''; return; }
   const top3 = d.pool.slice(0,3);
-  const multiDay = new Set(d.pool.map(x=>x.it.d)).size > 1;
   const fDay = d.fetchDay ? d.fetchDay.slice(5) : '—';
-  const scopeTxt = `抓取 ${fDay} · 最新稿件 ${d.latest.slice(5)}${multiDay ? ' · 近 7 天' : ''}`;
+  const latestTxt = d.latest ? d.latest.slice(5) : '待补充';
+  const scopeTxt = `抓取 ${fDay} · 最新稿件 ${latestTxt} · 候选 ${d.pool.length} 条`;
   // 今天抓过，但库里最新稿件不是今天 → 明确写「今日暂无新稿」，避免被误读成没更新
   const noToday = !!(d.fetchDay && d.latest !== d.fetchDay);
-  const note = noToday
-    ? `<div class="tf-note"><b>今日已抓取</b>（${escapeHtml(fmtFetchTime(META.generated_at))} · ${META.source_ok||0}/${META.source_total||0} 源正常），当前信源暂无 ${escapeHtml(fDay)} 发布的新稿；以下按发布日期倒序取近期重点。部分条目只能定位到月份或时间待补充，未纳入本速览。</div>`
-    : '';
+  const g = d.grades || {day:0, month:0, unknown:0};
+  const fuzzy = g.month + g.unknown;
+  const note = `<div class="tf-note"><b>今日已抓取</b>（${escapeHtml(fmtFetchTime(META.generated_at))} · ${META.source_ok||0}/${META.source_total||0} 源正常）${noToday ? `，当前信源暂无 ${escapeHtml(fDay)} 发布的新稿` : ''}；按日期精度分档排序（精确到日 → 仅到月份 → 时间待补充）。<b>日期不精确的 ${fuzzy} 条已全部纳入</b>：${g.month} 条仅到月份（标注「N 月」）、${g.unknown} 条时间待补充，均保留原文链接，不推测具体发布日期。</div>`;
+  // 直观展示「确实纳入了」：列出月份最新、热度最高的 2 条月精度条目，带原文链接
+  const monthTop = d.pool.filter(x=>dateGrade(x.it.d)==='month').slice(0,2);
+  const extra = fuzzy ? `<div class="tf-included"><span>已纳入 · 日期不精确</span>${
+      monthTop.map(x=>`<a href="${x.it.u && x.it.u!=='#' ? x.it.u : '#'}" ${x.it.u && x.it.u!=='#' ? 'target="_blank" rel="noopener"' : ''} title="${escapeHtml(dateTitle(x.it.d))}">${escapeHtml(dateLabel(x.it.d))} · ${escapeHtml(x.it.t)}</a>`).join('')
+    }<em>共 ${fuzzy} 条 · 详见左侧「资讯日报」</em></div>` : '';
   box.hidden = false;
   box.innerHTML = `
     <div class="tf-head">
@@ -2997,51 +3052,58 @@ function renderTopFlash(){
           <span class="tf-no">${i+1}</span>
           <span class="tf-tx">
             <span class="tf-tt">${escapeHtml(x.it.t)}</span>
-            <span class="tf-mt">${escapeHtml((x.it.d||'').slice(5))} · ${escapeHtml(x.card.name)}${x.it.h ? ' · 热度 '+x.it.h : ''}</span>
+            <span class="tf-mt" title="${escapeHtml(dateTitle(x.it.d))}">${escapeHtml(dateLabel(x.it.d))} · ${escapeHtml(x.card.name)}${x.it.h ? ' · 热度 '+x.it.h : ''}</span>
           </span>
         </a>`).join('')}
-    </div>${note}`;
+    </div>${extra}${note}`;
 }
 
 function dailyBuild(){
   const body = document.getElementById('dailyBody');
   const meta = document.getElementById('dailyMeta');
-  // ① 取最新真实日期（当日不足 6 条自动扩展为近 7 天）
+  // ① 三档日期精度的条目全部纳入（精确到日 / 仅到月份 / 时间待补充）
   const d = dailyPool();
-  if(!d){ body.innerHTML = '<div class="empty">资讯库暂无带真实日期的资讯，无法生成日报</div>'; return; }
-  const {latest, pool, scope} = d;
-  if(!pool.length){ body.innerHTML = '<div class="empty">最新抓取日期 ' + latest + ' 无资讯条目</div>'; return; }
-  const day = latest.slice(5).replace('-','/');
-  document.getElementById('dailyDate').textContent = latest;
-  // 抓取日与稿件日期分开写：日报内容是按稿件日期生成的，不能写成「抓取数据生成」
-  if(meta) meta.textContent = `抓取 ${d.fetchDay||'—'} · 稿件截至 ${latest} · 共 ${pool.length} 条`;
+  if(!d || !d.pool.length){ body.innerHTML = '<div class="empty">资讯库暂无可展示的资讯条目</div>'; return; }
+  const {latest, pool} = d;
+  const g = d.grades || {day:0, month:0, unknown:0};
+  document.getElementById('dailyDate').textContent = latest || '日期待补充';
+  // 抓取日与稿件日期分开写：日报按稿件日期生成，并如实披露日期不精确条目数
+  if(meta) meta.textContent = `抓取 ${d.fetchDay||'—'} · 稿件截至 ${latest||'待补充'} · 共 ${pool.length} 条（含 ${g.month+g.unknown} 条日期不精确）`;
 
   // ③ 按分类分节（TOP3 速览已移至卡片区顶部横幅）
   const groups = {};
   pool.forEach(x=>{ const k = _dailySectionTitle(x.it.cat || x.card.cat); (groups[k]=groups[k]||[]).push(x); });
   let secNo = 1;
+  const itemHtml = x => {
+    const src = x.card.name;
+    const u = x.it.u && x.it.u!=='#';
+    return `<div style="padding:7px 0;border-bottom:1px dashed var(--line)">
+      <div style="font-size:12.5px;line-height:1.6">${u?`<a href="${x.it.u}" target="_blank" rel="noopener" style="color:var(--tx);text-decoration:none">${escapeHtml(x.it.t)}</a>`:escapeHtml(x.it.t)}</div>
+      <div style="font-size:11px;color:var(--tx-dim2);margin:3px 0" title="${escapeHtml(dateTitle(x.it.d))}">（${escapeHtml(dateLabel(x.it.d))}，${escapeHtml(src)}）</div>
+      ${x.it.summary && x.it.summary!==x.it.t ? `<div style="font-size:11.5px;color:var(--tx-dim);line-height:1.6">${escapeHtml(x.it.summary)}</div>`:''}
+      <div style="font-size:11.5px;color:var(--accent);margin-top:3px">→ 解读：${escapeHtml(_dailyInsight(x))}</div>
+    </div>`;
+  };
   const htmlSecs = Object.entries(groups).map(([title, xs])=>{
     // 每个分类分节至多展示 5 条
     return `<div class="seg">
       <h5><i>${secNo++}</i>${escapeHtml(title)}</h5>
-      ${xs.slice(0,5).map(x=>{
-        const src = x.card.name;
-        const u = x.it.u && x.it.u!=='#';
-        return `<div style="padding:7px 0;border-bottom:1px dashed var(--line)">
-          <div style="font-size:12.5px;line-height:1.6">${u?`<a href="${x.it.u}" target="_blank" rel="noopener" style="color:var(--tx);text-decoration:none">${escapeHtml(x.it.t)}</a>`:escapeHtml(x.it.t)}</div>
-          <div style="font-size:11px;color:var(--tx-dim2);margin:3px 0">（${escapeHtml(x.it.d==='时间待补充'?scope:day)}，${escapeHtml(src)}）</div>
-          ${x.it.summary && x.it.summary!==x.it.t ? `<div style="font-size:11.5px;color:var(--tx-dim);line-height:1.6">${escapeHtml(x.it.summary)}</div>`:''}
-          <div style="font-size:11.5px;color:var(--accent);margin-top:3px">→ 解读：${escapeHtml(_dailyInsight(x))}</div>
-        </div>`;
-      }).join('')}
+      ${xs.slice(0,5).map(itemHtml).join('')}
     </div>`;
   }).join('');
+  // 日期不精确条目单独成节：进了候选池也必须真的看得见，否则等于没纳入
+  const fuzzyItems = pool.filter(x=>dateGrade(x.it.d)!=='day');
+  const fuzzySec = fuzzyItems.length ? `<div class="seg">
+    <h5><i>${secNo++}</i>日期精度待补充 · 已纳入 ${fuzzyItems.length} 条</h5>
+    <p style="font-size:11px;line-height:1.6;color:var(--tx-dim2);margin:0 0 4px">原文未提供可解析的完整发布日期，按「N 月」或「时间待补充」如实标注，未推测具体日期；均保留原文链接可溯源。</p>
+    ${fuzzyItems.slice(0,5).map(itemHtml).join('')}
+  </div>` : '';
 
   // ⑤ 一句话小结
   const cats = Object.keys(groups);
   const brands = [...new Set(pool.map(x=>x.it.brand).filter(Boolean))].slice(0,4);
   const summary = `今日主线是「${cats.slice(0,2).join(' + ') || '综合资讯'}」——共收录 ${pool.length} 条资讯${brands.length? '，涉及 ' + brands.join('、') : ''}，热度最高的是「${pool[0].it.t.slice(0,30)}${pool[0].it.t.length>30?'…':''}」。以上内容均来自真实抓取，可点击标题溯源原文。`;
-  body.innerHTML = htmlSecs + `
+  body.innerHTML = htmlSecs + fuzzySec + `
     <div class="seg">
       <h5><i>✍️</i>一句话小结</h5>
       <p style="font-size:12px;line-height:1.7;color:var(--tx-dim)">${escapeHtml(summary)}</p>
@@ -3053,9 +3115,12 @@ document.getElementById('dailyCopy').onclick = ()=>{
   if(!txt){ toast('暂无日报可复制'); return; }
   navigator.clipboard?.writeText(txt).then(()=>toast('日报已复制到剪贴板')).catch(()=>toast('复制失败，请手动选择'));
 };
-/* 启动：渲染卡片区顶部「今日重点速览」，并恢复日报展开状态 */
-try{ renderTopFlash(); }catch(err){ console.warn('renderTopFlash', err); }
-if(localStorage.getItem(DAILY_KEY)==='1') dailyOpen();
+/* 启动：订阅源初始化会重建 DATA，等同步初始化跑完再渲染速览与日报，
+   否则两处会基于不同的 DATA 快照，候选数与「已纳入」条数对不上。 */
+setTimeout(()=>{
+  try{ renderTopFlash(); }catch(err){ console.warn('renderTopFlash', err); }
+  if(localStorage.getItem(DAILY_KEY)==='1') dailyOpen();
+}, 0);
 try{ refreshNav(); }catch(err){}
 
 /* ============================================================
