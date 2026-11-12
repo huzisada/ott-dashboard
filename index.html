@@ -741,6 +741,13 @@
   }
   .tf-item:hover .tf-tt{color:var(--accent)}
   .tf-mt{display:block;font-size:10.5px;color:var(--tx-dim2);margin-top:3px}
+  /* 口径说明：抓取日 ≠ 文章发布日期，当日无新稿时必须如实讲清楚 */
+  .tf-note{
+    grid-column:1/-1;
+    font-size:10.5px;line-height:1.65;color:var(--tx-dim);
+    border-top:1px dashed var(--line);padding-top:8px;
+  }
+  .tf-note b{color:var(--accent);font-weight:600}
   @media(max-width:1180px){
     .topflash{grid-template-columns:1fr;gap:10px}
     .tf-head{border-right:none;border-bottom:1px dashed var(--line);padding:0 0 8px}
@@ -2228,6 +2235,15 @@ function fmtFetchTime(iso){
   const pad = n=>String(n).padStart(2,'0');
   return `${d.getMonth()+1}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+/* 「抓取日」按北京时间(UTC+8)折算成 YYYY-MM-DD。
+   Actions runner 跑在 UTC，不能直接用浏览器本地时区判断「今天有没有新稿」，
+   否则海外访问者会拿 UTC 日期去比文章发布日期，得出错误结论。 */
+function bjFetchDay(iso){
+  const d = parseStamp(iso); if(!d) return '';
+  const b = new Date(d.getTime() + 8*3600e3);
+  const pad = n=>String(n).padStart(2,'0');
+  return `${b.getUTCFullYear()}-${pad(b.getUTCMonth()+1)}-${pad(b.getUTCDate())}`;
+}
 function hoursSince(iso){
   const d = parseStamp(iso); if(!d) return null;
   return (Date.now()-d.getTime())/3600000;
@@ -2945,11 +2961,16 @@ function dailyPool(){
     if(!prev || (x.it.h||0) > (prev.it.h||0)) seen.set(k, x);
   });
   pool = [...seen.values()];
-  pool.sort((a,b)=>(b.it.h||0)-(a.it.h||0));
-  return {latest, pool, scope};
+  // 先按发布日期倒序、同日再按热度倒序。
+  // 旧逻辑只按热度排，会让过去一周高热度的旧公告长期霸占「今日重点速览」。
+  pool.sort((a,b)=> (b.it.d||'').localeCompare(a.it.d||'') || (b.it.h||0)-(a.it.h||0));
+  // fetchDay = 本次抓取的北京日期；latest = 库里最新「文章发布日期」，两者不是一回事
+  return {latest, pool, scope, fetchDay: bjFetchDay(META.generated_at)};
 }
 
-/* 今日重点速览（TOP3）· 卡片区顶部横幅 */
+/* 今日重点速览（TOP3）· 卡片区顶部横幅
+   口径：抓取日（META.generated_at，北京）与文章发布日期（it.d）分开标注。
+   当日没有新稿时如实说明，绝不把旧稿包装成「今日」，也不编造当日条目。 */
 function renderTopFlash(){
   const box = document.getElementById('topFlash');
   if(!box) return;
@@ -2957,7 +2978,13 @@ function renderTopFlash(){
   if(!d || !d.pool.length){ box.hidden = true; box.innerHTML = ''; return; }
   const top3 = d.pool.slice(0,3);
   const multiDay = new Set(d.pool.map(x=>x.it.d)).size > 1;
-  const scopeTxt = multiDay ? (d.latest.slice(5) + ' 起 7 天') : d.latest;
+  const fDay = d.fetchDay ? d.fetchDay.slice(5) : '—';
+  const scopeTxt = `抓取 ${fDay} · 最新稿件 ${d.latest.slice(5)}${multiDay ? ' · 近 7 天' : ''}`;
+  // 今天抓过，但库里最新稿件不是今天 → 明确写「今日暂无新稿」，避免被误读成没更新
+  const noToday = !!(d.fetchDay && d.latest !== d.fetchDay);
+  const note = noToday
+    ? `<div class="tf-note"><b>今日已抓取</b>（${escapeHtml(fmtFetchTime(META.generated_at))} · ${META.source_ok||0}/${META.source_total||0} 源正常），当前信源暂无 ${escapeHtml(fDay)} 发布的新稿；以下按发布日期倒序取近期重点。部分条目只能定位到月份或时间待补充，未纳入本速览。</div>`
+    : '';
   box.hidden = false;
   box.innerHTML = `
     <div class="tf-head">
@@ -2970,10 +2997,10 @@ function renderTopFlash(){
           <span class="tf-no">${i+1}</span>
           <span class="tf-tx">
             <span class="tf-tt">${escapeHtml(x.it.t)}</span>
-            <span class="tf-mt">${escapeHtml(x.card.name)}${x.it.h ? ' · 热度 '+x.it.h : ''}</span>
+            <span class="tf-mt">${escapeHtml((x.it.d||'').slice(5))} · ${escapeHtml(x.card.name)}${x.it.h ? ' · 热度 '+x.it.h : ''}</span>
           </span>
         </a>`).join('')}
-    </div>`;
+    </div>${note}`;
 }
 
 function dailyBuild(){
@@ -2986,7 +3013,8 @@ function dailyBuild(){
   if(!pool.length){ body.innerHTML = '<div class="empty">最新抓取日期 ' + latest + ' 无资讯条目</div>'; return; }
   const day = latest.slice(5).replace('-','/');
   document.getElementById('dailyDate').textContent = latest;
-  if(meta) meta.textContent = '基于 ' + latest + ' 抓取数据生成 · 共 ' + pool.length + ' 条';
+  // 抓取日与稿件日期分开写：日报内容是按稿件日期生成的，不能写成「抓取数据生成」
+  if(meta) meta.textContent = `抓取 ${d.fetchDay||'—'} · 稿件截至 ${latest} · 共 ${pool.length} 条`;
 
   // ③ 按分类分节（TOP3 速览已移至卡片区顶部横幅）
   const groups = {};
