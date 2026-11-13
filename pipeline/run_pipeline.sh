@@ -36,6 +36,20 @@ fi
 python3 ai_process.py >> "$LOG" 2>&1
 python3 export.py >> "$LOG" 2>&1
 
+# 3.5) LLM 全站总结（DeepSeek；先清洗正文再调用，失败不阻断发布）
+#      读取顺序：环境变量 LLM_API_KEY → pipeline/llm_key.txt（未填则整步跳过）
+if [ -n "${LLM_API_KEY:-}" ] || [ -s "$DIR/llm_key.txt" ]; then
+  if ! python3 -c "import trafilatura" 2>/dev/null; then
+    echo "安装 trafilatura…" >> "$LOG"
+    python3 -m pip install --quiet --disable-pip-version-check trafilatura >> "$LOG" 2>&1 || true
+  fi
+  if ! python3 summarize.py >> "$LOG" 2>&1; then
+    echo "!! LLM 总结失败，前端将回退规则版总结" >> "$LOG"
+  fi
+else
+  echo "未配置 LLM key，跳过全站总结（前端回退规则版）" >> "$LOG"
+fi
+
 # 4) 同步到部署目录（前端直接读 data.js）
 if [ -d "$DEPLOY" ]; then
   cp "$DIR/data/data.js" "$DEPLOY/data.js"

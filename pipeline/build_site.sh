@@ -17,6 +17,26 @@ else
   cp "$ROOT/pipeline/data/data.js" "$SITE/"
 fi
 
+# 2.5) LLM 全站总结（pipeline/summarize.py 产出 pipeline/summary.json）
+#      无该文件时写 null 占位，前端自动回退规则版总结，避免 404
+python3 - "$ROOT" "$SITE" <<'PYI'
+import json, sys
+from pathlib import Path
+root, site = Path(sys.argv[1]), Path(sys.argv[2])
+src = root / "pipeline" / "summary.json"
+data = None
+if src.is_file():
+    try:
+        data = json.loads(src.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"!! summary.json 解析失败，按无总结处理：{e}")
+js = ("/* 由 build_site.sh 从 pipeline/summary.json 生成，请勿手改 */\n"
+      "window.__OTT_SUMMARY__ = " + json.dumps(data, ensure_ascii=False, indent=1) + ";\n")
+(site / "summary.js").write_text(js, encoding="utf-8")
+(root / "summary.js").write_text(js, encoding="utf-8")
+print("summary.js 已生成：" + ("LLM 总结（%s）" % data.get("model") if data else "null（回退规则版）"))
+PYI
+
 # 3) 图标资源
 for f in favicon.ico favicon.svg favicon.png favicon-16.png favicon-32.png apple-touch-icon.png; do
   [ -f "$ROOT/$f" ] && cp "$ROOT/$f" "$SITE/"

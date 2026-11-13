@@ -17,3 +17,6 @@ site/
 
 # 系统
 .DS_Store
+
+# 本地构建产物（由 build_site.sh 生成）
+/summary.js
