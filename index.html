@@ -933,21 +933,10 @@
   .cf-more:hover{color:#3be0bc}
   .cf-more svg{width:13px;height:13px}
   .plat-card .plat-monitors{color:var(--tx-dim);border-color:var(--line)}
-  .plat-list{margin:14px 0 4px;display:flex;flex-direction:column;gap:9px}
-  .plat-item{display:grid;grid-template-columns:22px 1fr auto;gap:11px;align-items:start;
-    padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.018)}
-  .plat-no{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:700;
-    color:var(--accent);background:var(--accent-soft,rgba(11,197,160,.12));border:1px solid rgba(11,197,160,.28)}
-  .plat-main{min-width:0}
-  .plat-tt{font-size:13.5px;line-height:1.5;color:#e2e3e7;font-weight:600}
-  .plat-tags{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
-  .plat-cat{font-size:10.5px;color:#fca5a5;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
-    padding:1px 7px;border-radius:6px}
-  .plat-brand{font-size:11.5px;color:var(--tx-dim)}
-  .plat-time{font-size:11px;color:var(--tx-dim2)}
-  .plat-heat{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;min-width:34px}
-  .plat-heat b{font-size:19px;font-weight:800;color:var(--flame,#ff5c5c);font-variant-numeric:tabular-nums;line-height:1}
-  .plat-heat span{font-size:10px;color:var(--tx-dim2);margin-top:3px}
+  /* 条目结构复用普通卡片的 .rank-list / .item-title / .item-foot，仅保留品牌这一项平台专属信息 */
+  .plat-card .plat-tt{cursor:default}
+  .plat-card .plat-tt:hover{color:#d7d8dc}
+  .plat-card .plat-brand{color:var(--tx-dim)}
   /* ============ 首页 AI 助手 · 右栏全站总结 ============ */
   .ai-side .side-nm .side-date{
     display:inline-block;margin-left:4px;padding:1px 6px;border-radius:5px;
@@ -1425,21 +1414,20 @@ function renderPlatCard(c, expanded){
         <time>${c.monitors.join(' / ')}</time>
       </div>
     </div>
-    <div class="plat-list">
+    <ol class="rank-list">
       ${items.map((it,i)=>`
-        <div class="plat-item">
-          <span class="plat-no">${i+1}</span>
-          <div class="plat-main">
-            <div class="plat-tt">${escapeHtml(it.t)}</div>
-            <div class="plat-tags">
-              <span class="plat-cat">竞品</span>
+        <li>
+          <span class="rank ${i<3?'top':''}">${i+1}</span>
+          <div>
+            <span class="item-title plat-tt">${escapeHtml(it.t)}</span>
+            <div class="item-foot">
+              <span class="heat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s4 4.5 4 8a4 4 0 0 1-8 0c0-3.5 4-8 4-8z"/><path d="M12 22a6 6 0 0 0 6-6c0-3-2-5-3-6 .2 1.6-.5 2.5-1.2 2.9C13.3 9.6 12 6 12 6s-1.3 3.6-1.8 6.9C9.5 12.5 8.8 11.6 9 10c-1 1-3 3-3 6a6 6 0 0 0 6 6z" opacity=".55"/></svg>${Number(it.h).toFixed(1)} 热度</span>
+              <span>${escapeHtml(it.d)}</span>
               <span class="plat-brand">${escapeHtml(it.brand)}</span>
-              <span class="plat-time">🕘 ${escapeHtml(it.d)}</span>
             </div>
           </div>
-          <div class="plat-heat"><b>${Number(it.h).toFixed(1)}</b><span>热度</span></div>
-        </div>`).join('')}
-    </div>
+        </li>`).join('')}
+    </ol>
     <div class="card-foot">
       <span class="cf-count">共 ${c.items.length} 条 · 示例数据</span>
       ${tooMany ? `<button class="cf-more rank-toggle${expanded?' open':''}" data-cid="${c.id}">${expanded?'收起':'查看全部'}${moreIcon}</button>` : ''}
