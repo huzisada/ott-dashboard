@@ -421,7 +421,7 @@
   .btn-xs{height:28px;padding:0 12px;border-radius:8px;font-size:12px}
 
   /* ============ Sources Modal v2 ============ */
-  .modal-wide{max-width:720px;max-height:88vh}
+  .modal-wide{max-width:980px;max-height:88vh}
   .src-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
   .src-filter .chip{
     padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.02);
@@ -439,6 +439,95 @@
     background:rgba(255,255,255,.06);color:var(--tx-dim2);padding:1px 7px;border-radius:10px;font-size:10.5px;font-weight:500
   }
 
+  /* ===== 订阅源选择器：搜索 + 分类 Tab + 标签 + 未订阅/已订阅双栏 ===== */
+  .src-picker{margin:2px 0 6px}
+  .sp-bar{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+  .sp-search{
+    flex:1;display:flex;align-items:center;gap:8px;min-width:0;
+    background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:10px;padding:8px 11px;
+    transition:border-color .15s
+  }
+  .sp-search:focus-within{border-color:rgba(11,197,160,.45)}
+  .sp-search svg{width:14px;height:14px;color:var(--tx-dim2);flex-shrink:0}
+  .sp-search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--tx);font-size:12.5px;font-family:inherit}
+  .sp-search input::placeholder{color:var(--tx-dim2)}
+  .sp-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .sp-tab{
+    display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 11px;border-radius:8px;
+    border:1px solid transparent;color:var(--tx-dim);cursor:pointer;transition:.15s;user-select:none
+  }
+  .sp-tab:hover{background:rgba(255,255,255,.05);color:var(--tx)}
+  .sp-tab.on{background:rgba(11,197,160,.13);color:var(--accent);border-color:rgba(11,197,160,.38);font-weight:600}
+  .sp-tab .n{font-size:10px;opacity:.55;font-style:normal}
+  .sp-tab.on .n{opacity:.8}
+  .sp-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .sp-tags-lb{font-size:11px;color:var(--tx-dim2);margin-right:2px}
+  .sp-tag{
+    display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:999px;
+    border:1px solid var(--line);color:var(--tx-dim2);cursor:pointer;transition:.15s;user-select:none
+  }
+  .sp-tag:hover{color:var(--tx);border-color:var(--line-strong)}
+  .sp-tag.on{color:var(--accent);border-color:rgba(11,197,160,.4);background:rgba(11,197,160,.1)}
+  .sp-tag i{font-style:normal;font-size:10px;opacity:.6}
+  .sp-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .sp-col{background:rgba(255,255,255,.018);border:1px solid var(--line);border-radius:13px;padding:12px 12px 14px}
+  .sp-col.on{border-color:rgba(11,197,160,.24);background:rgba(11,197,160,.035)}
+  .sp-col-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:11px}
+  .sp-col-tt{font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px}
+  .sp-col-tt b{
+    font-size:10.5px;font-weight:600;color:var(--tx-dim);background:rgba(255,255,255,.07);
+    border-radius:999px;padding:1px 7px
+  }
+  .sp-col.on .sp-col-tt b{color:var(--accent);background:rgba(11,197,160,.14)}
+  .sp-col-hint{font-size:10.5px;color:var(--tx-dim2)}
+  .sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:9px}
+  .sp-card{
+    position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;
+    padding:13px 9px 15px;border:1px solid var(--line);border-radius:11px;cursor:pointer;
+    background:rgba(255,255,255,.028);transition:transform .15s,border-color .15s,background .15s
+  }
+  .sp-card:hover{transform:translateY(-2px);border-color:var(--line-strong);background:rgba(255,255,255,.05)}
+  .sp-card.on{border-color:rgba(11,197,160,.3)}
+  .sp-ic{
+    width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+    font-size:15px;font-weight:800;color:#fff;background:var(--c,#3b82f6);
+    box-shadow:0 6px 16px -8px var(--c,#3b82f6);flex-shrink:0
+  }
+  .sp-card.on .sp-ic{box-shadow:0 6px 18px -6px var(--c,#3b82f6)}
+  .sp-nm{
+    font-size:11.5px;line-height:1.45;color:var(--tx);max-width:100%;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden
+  }
+  .sp-meta{font-size:10px;color:var(--tx-dim2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sp-act{
+    position:absolute;right:6px;bottom:6px;width:17px;height:17px;border-radius:50%;
+    display:grid;place-items:center;font-size:11px;line-height:1;font-family:inherit;
+    border:1px solid var(--line);background:transparent;color:var(--tx-dim2);cursor:pointer;padding:0;
+    transition:.15s
+  }
+  .sp-act:hover{border-color:var(--accent);color:var(--accent)}
+  .sp-card.on .sp-act{color:var(--accent);border-color:rgba(11,197,160,.55);background:rgba(11,197,160,.14)}
+  .sp-no{position:absolute;right:7px;top:6px;font-size:9.5px;color:var(--tx-dim2);opacity:.7;font-variant-numeric:tabular-nums}
+  .sp-dot{position:absolute;left:8px;top:8px;width:6px;height:6px;border-radius:50%;background:var(--tx-dim2);opacity:.55}
+  .sp-dot.ok{background:#4ade80;opacity:.9}
+  .sp-dot.pending{background:#fbbf24;opacity:.9}
+  .sp-dot.error{background:#f87171;opacity:1}
+  .sp-dot.paused{background:#6b7280}
+  .sp-tools{position:absolute;left:5px;bottom:5px;display:flex;gap:2px;opacity:0;transition:opacity .15s}
+  .sp-card:hover .sp-tools{opacity:1}
+  .sp-tool{
+    width:17px;height:17px;border-radius:5px;display:grid;place-items:center;padding:0;
+    border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--tx-dim);cursor:pointer
+  }
+  .sp-tool svg{width:10px;height:10px}
+  .sp-tool:hover{color:#fff;border-color:var(--line-strong)}
+  .sp-tool.danger:hover{color:#f87171;border-color:rgba(248,113,113,.5)}
+  .sp-none{font-size:11.5px;color:var(--tx-dim2);text-align:center;padding:22px 0}
+  .sp-editor-wrap{margin-top:14px}
+  @media(max-width:860px){
+    .sp-cols{grid-template-columns:1fr}
+    .sp-grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+  }
   .src-row{
     display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid var(--line);
     border-radius:12px;margin-bottom:8px;background:rgba(255,255,255,.015);transition:.15s
@@ -1207,18 +1296,23 @@
     <h3>订阅源管理</h3>
     <p class="sub">管理 AI 的阅读范围：增删信息源、配置关键词规则（品牌+动作）、调整抓取频率、监控抓取状态。</p>
 
-    <div class="src-filter">
-      <span class="chip on" data-f="all">全部</span>
-      <span class="chip" data-f="media">媒体</span>
-      <span class="chip" data-f="data">数据</span>
-      <span class="chip" data-f="policy">政策</span>
-      <span class="chip" data-f="competitor">竞品</span>
-      <span class="chip" data-f="vendor">厂商</span>
-      <span class="chip" data-f="short_drama">短剧</span>
-      <span class="chip" data-f="integrated">一体化</span>
-    </div>
+    <div class="src-picker">
+      <div class="sp-bar">
+        <label class="sp-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="srcSearch" type="text" placeholder="搜索订阅源名称或分类…" autocomplete="off"/>
+        </label>
+        <button class="btn btn-ghost btn-sm" id="srcReset" title="清除手动开关记录，回到配置默认">恢复默认</button>
+        <button class="btn btn-primary btn-sm" id="srcSave">保存</button>
+      </div>
 
-    <div id="srcList"></div>
+      <div class="sp-tabs" id="srcTabs"></div>
+      <div class="sp-tags" id="srcTags">
+        <span class="sp-tags-lb">标签</span>
+      </div>
+
+      <div id="srcList"></div>
+    </div>
 
     <details class="src-add">
       <summary>
@@ -1878,6 +1972,7 @@ let SOURCES = DATA
   else if(c.cat==='一体化电视') t='integrated';
   return {id:c.id||null, name:c.name, cat:c.cat, type:t, c:c.c, on:true, freq:'workday', url:c.url||'', rss:'', keyword_rules:[], status:'enabled', last_fetch_time:c.time||'', fail_count:0, last_error:''};
 });
+SOURCES.forEach(sx=>{ if(sx._defOn===undefined) sx._defOn = !!sx.on; });   // 记录配置默认值，供「恢复默认」使用
 applySrcOverrides();   // 恢复用户上次手动关闭/开启的源
 let SRC_FILTER = 'all';   // 当前类型筛选
 let SRC_OPEN_EDITOR = null; // 当前展开编辑的源 idx
@@ -1982,25 +2077,108 @@ function _fmtTime(iso){
     ? `今日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
     : `${d.getMonth()+1}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+/* ===== 订阅源管理：未订阅 / 已订阅 双栏卡片选择器（参照 Momoyu 式订阅源面板） ===== */
+let SRC_Q = '';      // 搜索词
+let SRC_TAG = 'all'; // 标签筛选：all / ok / pending / error / paused
+const SRC_TAG_DEF = [
+  {id:'all',     label:'全部'},
+  {id:'ok',      label:'抓取正常'},
+  {id:'pending', label:'待接入'},
+  {id:'error',   label:'异常'},
+  {id:'paused',  label:'已暂停'},
+];
+/* 配置默认的订阅状态：直接看抓取管道里的源状态（ok/empty 视为默认订阅，pending 视为待接入）
+   不依赖渲染期缓存，SOURCES 被重建后依然准确 */
+function _srcCfg(s){
+  const cfg = (window.__OTT_SRC_CONFIG__ && window.__OTT_SRC_CONFIG__.sources) || [];
+  return cfg.find(x=>x.id===s.id) || cfg.find(x=>x.name===s.name) || null;
+}
+function _srcDefaultOn(s){
+  const c = _srcCfg(s);
+  if(c) return c.enabled !== false;
+  if(s.custom) return true;
+  return !(s.status==='pending' || s.status==='paused');
+}
+function _srcTagOf(s){
+  const st = s.status || (s.on ? 'enabled' : 'paused');
+  if(st==='error') return 'error';
+  const c = _srcCfg(s);
+  if(c && c.enabled === false) return 'pending';   // 配置里「待接入」的源
+  if(!s.on) return 'paused';
+  return 'ok';
+}
+function _srcMatch(s){
+  if(SRC_FILTER!=='all' && s.type!==SRC_FILTER) return false;
+  if(SRC_TAG!=='all' && _srcTagOf(s)!==SRC_TAG) return false;
+  if(SRC_Q){
+    const q = SRC_Q.toLowerCase();
+    const blob = (s.name+' '+(s.cat||'')+' '+(SRC_TYPE_LABEL[s.type]||'')).toLowerCase();
+    if(!blob.includes(q)) return false;
+  }
+  return true;
+}
+function _srcCard(s, idx, order){
+  const on = !!s.on;
+  const tag = _srcTagOf(s);
+  const tip = tag==='pending' ? '待接入 · 需补抓取适配器' : (tag==='error' ? `异常 · 连续失败 ${s.fail_count||0} 次` : _fmtTime(s.last_fetch_time));
+  return `
+  <article class="sp-card ${on?'on':''}" data-i="${idx}" title="${escapeHtml(tip)}">
+    <div class="sp-tools">
+      ${s.custom?`<button class="sp-tool danger" data-del="${idx}" title="删除">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      </button>`:''}
+    </div>
+    <div class="sp-ic" style="--c:${s.c||'#3b82f6'}">${escapeHtml((s.name||'?').slice(0,1))}</div>
+    <div class="sp-nm">${escapeHtml(s.name)}</div>
+    <div class="sp-meta">${escapeHtml((s.cat&&s.cat!==(SRC_TYPE_LABEL[s.type]||'')) ? s.cat+' · '+(SRC_TYPE_LABEL[s.type]||'媒体') : (s.cat||SRC_TYPE_LABEL[s.type]||'媒体'))}</div>
+    <span class="sp-dot ${tag}" title="${escapeHtml(tip)}"></span>
+    ${order?`<span class="sp-no">#${String(order).padStart(2,'0')}</span>`:''}
+    <button class="sp-act" data-sub="${idx}" title="${on?'取消订阅':'订阅'}">${on?'✓':'+'}</button>
+  </article>`;
+}
+function renderSrcTabs(){
+  const box = document.getElementById('srcTabs');
+  if(!box) return;
+  const cnt = {};
+  SOURCES.forEach(s=>{ cnt[s.type]=(cnt[s.type]||0)+1; });
+  const tabs = [{id:'all', label:'所有分类', n:SOURCES.length}]
+    .concat(Object.keys(SRC_TYPE_LABEL).filter(t=>cnt[t]).map(t=>({id:t, label:SRC_TYPE_LABEL[t], n:cnt[t]})));
+  box.innerHTML = tabs.map(t=>`<span class="sp-tab ${SRC_FILTER===t.id?'on':''}" data-sp-tab="${t.id}">${t.label}<i class="n">${t.n}</i></span>`).join('');
+
+  const tagBox = document.getElementById('srcTags');
+  if(tagBox){
+    const counts = {all:SOURCES.length, ok:0, pending:0, error:0, paused:0};
+    SOURCES.forEach(s=>counts[_srcTagOf(s)]++);
+    tagBox.innerHTML = '<span class="sp-tags-lb">标签</span>' + SRC_TAG_DEF
+      .map(t=>`<span class="sp-tag ${SRC_TAG===t.id?'on':''}" data-sp-tag="${t.id}">${t.label}<i>${counts[t.id]||0}</i></span>`).join('');
+  }
+}
 function renderSources(){
-  const groups = {};
-  SOURCES.forEach((s,idx)=>{
-    const f = SRC_FILTER;
-    const matchType = (f==='all') || (s.type===f);
-    if(!matchType) return;
-    const t = s.type||'media';
-    (groups[t] = groups[t] || []).push({s, idx});
-  });
-  const order = ['policy','competitor','vendor','data','media','short_drama','integrated'];
-  const html = order.filter(t=>groups[t] && groups[t].length).map(t=>{
-    const list = groups[t];
-    return `
-    <div class="src-group">
-      <div class="gt">${SRC_TYPE_LABEL[t]||t} <span class="cnt">${list.length} 个</span></div>
-      ${list.map(({s,idx})=>_renderSrcRow(s, idx)).join('')}
-    </div>`;
-  }).join('');
-  document.getElementById('srcList').innerHTML = html || `<div class="empty" style="padding:24px 0;font-size:12.5px">当前筛选下没有订阅源</div>`;
+  const list = document.getElementById('srcList');
+  if(!list) return;
+  renderSrcTabs();
+  const idxs = SOURCES.map((s,i)=>i).filter(i=>_srcMatch(SOURCES[i]));
+  const off = idxs.filter(i=>!SOURCES[i].on);
+  const on  = idxs.filter(i=>SOURCES[i].on);
+  const totalOn = SOURCES.filter(s=>s.on).length;
+
+  const col = (title, hint, items, cls) => `
+    <section class="sp-col ${cls}">
+      <div class="sp-col-head">
+        <span class="sp-col-tt">${title}<b>${items.length}</b></span>
+        <span class="sp-col-hint">${hint}</span>
+      </div>
+      ${items.length ? `<div class="sp-grid">${items.map((i,k)=>_srcCard(SOURCES[i], i, cls==='on'?k+1:0)).join('')}</div>`
+        : `<div class="sp-none">${SRC_Q||SRC_TAG!=='all'||SRC_FILTER!=='all' ? '没有匹配的订阅源' : '暂无'}</div>`}
+    </section>`;
+
+  const editor = SRC_OPEN_EDITOR!==null && SOURCES[SRC_OPEN_EDITOR]
+    ? `<div class="sp-editor-wrap">${_renderSrcEditor(SOURCES[SRC_OPEN_EDITOR], SRC_OPEN_EDITOR)}</div>` : '';
+
+  list.innerHTML = `<div class="sp-cols">
+      ${col('未订阅','点击卡片或 + 订阅', off, 'off')}
+      ${col('已订阅',`${totalOn} / ${SOURCES.length}`, on, 'on')}
+    </div>${editor}`;
 }
 function _renderSrcRow(s, idx){
   const status = s.status || (s.on ? 'enabled' : 'paused');
@@ -2107,23 +2285,50 @@ function _renderRuleEditor(srcIdx, rule, ruleIdx){
 }
 async function openModal(){
   const news = await syncSourcesFromBackend();
-  SRC_FILTER = 'all';
-  document.querySelectorAll('.src-filter .chip').forEach(c=>c.classList.toggle('on', c.dataset.f==='all'));
+  SRC_FILTER = 'all'; SRC_TAG = 'all'; SRC_Q = '';
+  const q = document.getElementById('srcSearch'); if(q) q.value = '';
+  SRC_OPEN_EDITOR = null;
   renderSources();
   document.getElementById('modalMask').classList.add('show');
   if(news.length){
     setTimeout(()=> toast(`已从后端同步 ${news.length} 个新增订阅源`), 200);
   }
 }
-/* 过滤芯片 */
+/* 分类 Tab / 标签 / 搜索 / 保存 / 恢复默认 */
 document.addEventListener('click', e=>{
-  const chip = e.target.closest('.src-filter .chip');
-  if(!chip) return;
-  SRC_FILTER = chip.dataset.f;
-  document.querySelectorAll('.src-filter .chip').forEach(c=>c.classList.toggle('on', c.dataset.f===SRC_FILTER));
-  SRC_OPEN_EDITOR = null;
-  renderSources();
+  const tab = e.target.closest('[data-sp-tab]');
+  if(tab){ SRC_FILTER = tab.dataset.spTab; SRC_OPEN_EDITOR = null; renderSources(); return; }
+  const tag = e.target.closest('[data-sp-tag]');
+  if(tag){ SRC_TAG = tag.dataset.spTag; SRC_OPEN_EDITOR = null; renderSources(); return; }
+  if(e.target.closest('#srcSave')){
+    const on = SOURCES.filter(s=>s.on).length;
+    SOURCES.forEach(s=> setSrcOverride(_srcKey(s), s.on));
+    applySourcesToGrid();
+    toast(`已保存 ${on} 个订阅源（刷新后保持）`);
+    return;
+  }
+  if(e.target.closest('#srcReset')){
+    try{ localStorage.removeItem('ott_src_overrides'); }catch(_){}
+    SOURCES.forEach(s=>{
+      const def = _srcDefaultOn(s);
+      s.on = !!def;
+      s.status = s.on ? (s.status==='error'?'error':'enabled') : (s.status==='pending'?'pending':'paused');
+    });
+    SRC_FILTER='all'; SRC_TAG='all'; SRC_Q='';
+    const q=document.getElementById('srcSearch'); if(q) q.value='';
+    renderSources(); applySourcesToGrid(); render();
+    toast('已恢复到配置默认的订阅状态');
+    return;
+  }
 });
+document.addEventListener('input', e=>{
+  if(e.target && e.target.id==='srcSearch'){
+    SRC_Q = e.target.value.trim();
+    SRC_OPEN_EDITOR = null;
+    renderSources();
+  }
+});
+
 document.getElementById('srcList').addEventListener('click', async e=>{
   // 取消编辑
   const cancel = e.target.closest('[data-cancel-edit]');
@@ -2138,6 +2343,22 @@ document.getElementById('srcList').addEventListener('click', async e=>{
     const idx = +editBtn.dataset.edit;
     SRC_OPEN_EDITOR = (SRC_OPEN_EDITOR===idx) ? null : idx;
     renderSources();
+    return;
+  }
+  // 卡片点击 → 订阅 / 取消订阅
+  const sub = e.target.closest('[data-sub]');
+  if(sub || (e.target.closest('.sp-card') && !e.target.closest('.sp-tools'))){
+    const idx = +((sub && sub.dataset.sub) || e.target.closest('.sp-card').dataset.i);
+    const s2 = SOURCES[idx];
+    if(!s2) return;
+    const next = !s2.on;
+    s2.on = next;
+    s2.status = next ? (s2.status==='error'?'error':'enabled') : (s2.status==='pending'?'pending':'paused');
+    setSrcOverride(_srcKey(s2), next);
+    renderSources();
+    applySourcesToGrid();
+    render();
+    toast(next ? `已订阅「${s2.name}」` : `已取消订阅「${s2.name}」`);
     return;
   }
   // 启用/暂停（本地持久化：刷新后保持用户选择）
@@ -3490,7 +3711,7 @@ function l1InjectUI(){
   const cfgUrl = `https://github.com/${L1_OWNER}/${L1_REPO}/edit/${L1_BRANCH}/${L1_PATH}`;
   document.getElementById('modalMask').classList.add('l1-readonly');
   if(sub){
-    sub.textContent = '只读视图：可查看每个订阅源的抓取状态与最近抓取时间；配置由仓库统一管理。';
+    sub.textContent = '点击卡片即可订阅 / 取消订阅（仅本机生效，刷新后保持）；信源本身由仓库配置统一管理。';
     sub.insertAdjacentHTML('afterend', `
       <div class="l1-bar">
         <div class="l1-bar-top">
@@ -3498,7 +3719,7 @@ function l1InjectUI(){
           <span>只读 · 配置来自 ${L1_OWNER}/${L1_REPO} 的 pipeline/sources.json，每日自动抓取（漏跑自动补抓）</span>
           <a class="btn btn-ghost btn-xs" href="${cfgUrl}" target="_blank" rel="noopener">在 GitHub 修改配置</a>
         </div>
-        <p class="l1-sub">需要新增或停用信源时，点右上角在 GitHub 网页编辑并提交，会自动触发一次重新抓取（约 5 分钟生效）。本页无需登录、无需任何令牌。</p>
+        <p class="l1-sub">订阅 / 取消订阅只影响本机这个浏览器的看板显示，不会改动抓取管道。需要真正新增或停用信源，点右上角在 GitHub 网页编辑并提交，会自动触发一次重新抓取（约 5 分钟生效）。本页无需登录、无需任何令牌。</p>
       </div>`);
   }
 }
