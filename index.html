@@ -3782,16 +3782,17 @@ function renderLLMDaily(S, body, meta){
     const r = refs[n];
     if(!r || !r.u || r.u==='#') return `<sup class="cite">${n}</sup>`;
     return `<a class="cite" href="${r.u}" target="_blank" rel="noopener" title="${escapeHtml(r.t)}">${n}</a>`;
-  }).split('\n').filter(x=>x.trim()).map(x=>`<p class="llm-p">${x}</p>`).join('');
+  }).replace(/\n+/g,'').trim();
+  const proseP = txt => `<p class="llm-p">${prose(txt)}</p>`;
 
   const secs = (S.sections||[]).map((sg,i)=>`<div class="seg">
       <h5><i>${i+1}</i>${escapeHtml(sg.title)}</h5>
-      ${prose(sg.text)}
+      ${proseP(sg.text)}
     </div>`).join('');
   body.innerHTML = `
     <div class="seg">
       <h5><i>☰</i>导语</h5>
-      <p class="llm-p llm-lead">${escapeHtml(S.overview)}</p>
+      <p class="llm-p llm-lead">${escapeHtml(S.overview).replace(/\n+/g,'')}</p>
     </div>
     ${secs}
     <div style="padding:10px 0 4px;font-size:10.5px;color:var(--tx-dim2);line-height:1.6">由 ${escapeHtml(S.model||'LLM')} 基于当日抓取正文撰写（${S.n_fulltext||0}/${S.n_candidates||0} 条为全文，其余用标题摘要）；正文角标可点击回原文核对。</div>`;
