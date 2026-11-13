@@ -178,6 +178,9 @@
   .btn svg{width:16px;height:16px}
   .btn-ghost{background:#15161a;border-color:var(--line);color:#cdcfd4}
   .btn-ghost:hover{border-color:var(--line-strong);color:#fff}
+  /* 资讯日报按钮：右栏展开时呈青色激活态 */
+  .btn.btn-on{background:rgba(11,197,160,.13);border-color:rgba(11,197,160,.42);color:var(--accent)}
+  .btn.btn-on:hover{background:rgba(11,197,160,.2);color:var(--accent)}
   .btn-primary{background:var(--accent);color:#06231d}
   .btn-primary:hover{background:var(--accent-hi)}
 
@@ -1166,6 +1169,10 @@
           </div>
         </div>
         <div class="actions">
+          <button class="btn btn-ghost" id="btnDaily" title="资讯日报：AI 全站总结（右栏展开 / 收起）">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+            资讯日报
+          </button>
           <button class="btn btn-ghost" id="btnTrend">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             今日趋势
@@ -1482,7 +1489,6 @@ const NAV = [
   {id:'home',        label:'主页',     icon:'home'},
   {id:'assistant',   label:'AI 助手',  icon:'bot'},
   {id:'competitor',  label:'竞品动态', icon:'activity'},
-  {id:'daily',       label:'资讯日报', icon:'news'},
   {id:'data',        label:'行业数据', icon:'bar'},
   {id:'hot',         label:'热点节目', icon:'play'},
   {id:'policy',      label:'政策动态', icon:'file'},
@@ -1579,14 +1585,25 @@ const EMPTY = {
 function isNavActive(id){
   const aiOn = document.body.classList.contains('ai-open');
   if(id==='assistant') return aiOn;
-  if(id==='daily') return !document.getElementById('dailySide').classList.contains('collapsed');
   return !aiOn && id===activeNav;
 }
 function navHTML(){
   return NAV.map(n=>`<a data-nav="${n.id}" class="${isNavActive(n.id)?'active':''}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n.icon]}</svg><span class="lb">${n.label}</span></a>`).join('');
 }
-function refreshNav(){ nav.innerHTML = navHTML(); }
+function refreshNav(){
+  nav.innerHTML = navHTML();
+  syncDailyBtn();
+}
+/* 「资讯日报」已从左侧导航移到顶部按钮区：按钮激活态与右栏展开状态保持一致 */
+function syncDailyBtn(){
+  const b = document.getElementById('btnDaily');
+  if(!b) return;
+  const side = document.getElementById('dailySide');
+  const on = side && !side.classList.contains('collapsed');
+  b.classList.toggle('btn-on', !!on);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+}
 function matchNav(card){
   if(activeNav==='home') return true;
   if(activeNav==='hot') return card.id==='hot_program';
@@ -1693,12 +1710,6 @@ nav.addEventListener('click', e=>{
   if(!a) return;
   const id = a.dataset.nav;
   if(id==='assistant'){ aiOpen(true); refreshNav(); return; }
-  if(id==='daily'){
-    if(document.body.classList.contains('ai-open')) aiOpen(false);
-    dailyToggle();
-    refreshNav();
-    return;
-  }
   if(document.body.classList.contains('ai-open')) aiOpen(false);
   activeNav = id;
   // 首页：AI 助手常驻右侧栏并自动总结；用户手动关掉过（DAILY_KEY==='0'）则尊重选择
@@ -1899,6 +1910,11 @@ function closeTrend(){
   m.setAttribute('aria-hidden','true');
 }
 document.getElementById('btnTrend').onclick = openTrend;
+document.getElementById('btnDaily').onclick = ()=>{
+  if(document.body.classList.contains('ai-open')) aiOpen(false);
+  dailyToggle();
+  refreshNav();
+};
 document.getElementById('trClose').onclick = closeTrend;
 document.getElementById('trendMask').onclick = e=>{ if(e.target.id === 'trendMask') closeTrend(); };
 document.addEventListener('keydown', e=>{
@@ -3554,14 +3570,14 @@ const DAILY_KEY = 'ott_daily_open';
 function dailyClose(persist){
   document.getElementById('dailySide').classList.add('collapsed');
   if(persist !== false) localStorage.setItem(DAILY_KEY,'0');
-  try{ refreshNav(); }catch(e){}   // 同步左侧导航高亮
+  try{ refreshNav(); }catch(e){}   // 同步顶部按钮激活态
 }
 function dailyOpen(){
   document.getElementById('aiSide').classList.add('collapsed'); // 与 AI 总结右栏互斥
   document.getElementById('dailySide').classList.remove('collapsed');
   localStorage.setItem(DAILY_KEY,'1');
   dailyBuild();
-  try{ refreshNav(); }catch(e){}   // 同步左侧导航高亮
+  try{ refreshNav(); }catch(e){}   // 同步顶部按钮激活态
 }
 function dailyToggle(){
   const el = document.getElementById('dailySide');
