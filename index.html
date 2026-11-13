@@ -1044,15 +1044,6 @@
   .ai-side .loader{padding:24px 0;text-align:center;color:var(--tx-dim2);font-size:12px}
   .ai-side .loader span{display:inline-block;animation:typing 1s infinite}
 
-  /* ============ 单条「深度总结」按钮 ============ */
-  .item-deep{
-    display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:11px;
-    color:var(--tx-dim2);cursor:pointer;border:none;background:transparent;padding:3px 6px;
-    border-radius:6px;transition:.15s;font-family:inherit;white-space:nowrap;flex-shrink:0
-  }
-  .item-deep:hover{color:var(--accent);background:var(--accent-soft)}
-  .item-deep svg{width:11px;height:11px}
-
   /* ============ 深度总结 Modal ============ */
   .deep-mask .modal{max-width:600px}
   .deep-mask .modal h3{font-size:16px}
@@ -1689,8 +1680,6 @@ function render(){
                 <span class="heat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s4 4.5 4 8a4 4 0 0 1-8 0c0-3.5 4-8 4-8z"/><path d="M12 22a6 6 0 0 0 6-6c0-3-2-5-3-6 .2 1.6-.5 2.5-1.2 2.9C13.3 9.6 12 6 12 6s-1.3 3.6-1.8 6.9C9.5 12.5 8.8 11.6 9 10c-1 1-3 3-3 6a6 6 0 0 0 6 6z" opacity=".55"/></svg>${it.h} 热度</span>
                 <span>${it.d}</span>
                 ${c.agg ? `<span class="hot-src">${escapeHtml(hotSourceName(it.id))}</span>` : ''}
-                ${it.id?`<button class="item-deep" data-id="${it.id}" title="AI 深度总结" aria-label="AI 深度总结">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 2.4 1 4.4 2.5 5.8L5 22l4.4-2.4A8 8 0 1 0 12 2z"/></svg>AI 总结</button>`:''}
               </div>
             </div>
           </li>`).join('')}
