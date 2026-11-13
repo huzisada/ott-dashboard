@@ -709,7 +709,7 @@
 
   /* ============ 两栏布局：搜索结果(左) + AI 总结(右) ============ */
   .grid-wrap{display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:flex-start}
-  .lcol{min-width:0}
+  .lcol{min-width:0;container-type:inline-size}
 
   /* ============ 今日重点速览（TOP3）· 卡片区顶部横幅 ============ */
   .topflash{
@@ -745,26 +745,16 @@
   }
   .tf-item:hover .tf-tt{color:var(--accent)}
   .tf-mt{display:block;font-size:10.5px;color:var(--tx-dim2);margin-top:3px}
-  /* 口径说明：抓取日 ≠ 文章发布日期，当日无新稿时必须如实讲清楚 */
-  .tf-note{
-    grid-column:1/-1;
-    font-size:10.5px;line-height:1.65;color:var(--tx-dim);
-    border-top:1px dashed var(--line);padding-top:8px;
+  /* 右侧 AI 助手占走 360px 后，左侧主区可能只剩 600px 左右，
+     三列 TOP3 会被挤成每列 100px、标题一行只放得下几个字 —— 按容器实际宽度改为竖排。 */
+  @container (max-width:760px){
+    .topflash{grid-template-columns:1fr;gap:10px}
+    .tf-head{border-right:none;border-bottom:1px dashed var(--line);padding:0 0 8px}
+    .tf-head em,.tf-head b{white-space:normal}
+    .tf-list{grid-template-columns:1fr}
+    .tf-item{border-left:none;border-top:1px dashed var(--line);padding:8px 0}
+    .tf-item:first-child{border-top:none;padding-top:0}
   }
-  .tf-note b{color:var(--accent);font-weight:600}
-  /* 日期不精确条目已纳入的可视化凭证：一行带原文链接的样例 */
-  .tf-included{
-    grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;
-    font-size:10.5px;color:var(--tx-dim);
-    border-top:1px dashed var(--line);padding-top:7px;
-  }
-  .tf-included>span{color:var(--accent);font-weight:600;white-space:nowrap}
-  .tf-included a{
-    color:var(--tx-mid);text-decoration:none;min-width:0;max-width:250px;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  }
-  .tf-included a:hover{color:var(--accent)}
-  .tf-included em{font-style:normal;color:var(--tx-dim2);white-space:nowrap}
   @media(max-width:1180px){
     .topflash{grid-template-columns:1fr;gap:10px}
     .tf-head{border-right:none;border-bottom:1px dashed var(--line);padding:0 0 8px}
@@ -3220,16 +3210,6 @@ function renderTopFlash(){
   const fDay = d.fetchDay ? d.fetchDay.slice(5) : '—';
   const latestTxt = d.latest ? d.latest.slice(5) : '待补充';
   const scopeTxt = `抓取 ${fDay} · 最新稿件 ${latestTxt} · 候选 ${d.pool.length} 条`;
-  // 今天抓过，但库里最新稿件不是今天 → 明确写「今日暂无新稿」，避免被误读成没更新
-  const noToday = !!(d.fetchDay && d.latest !== d.fetchDay);
-  const g = d.grades || {day:0, month:0, unknown:0};
-  const fuzzy = g.month + g.unknown;
-  const note = `<div class="tf-note"><b>今日已抓取</b>（${escapeHtml(fmtFetchTime(META.generated_at))} · ${META.source_ok||0}/${META.source_total||0} 源正常）${noToday ? `，当前信源暂无 ${escapeHtml(fDay)} 发布的新稿` : ''}；按日期精度分档排序（精确到日 → 仅到月份 → 时间待补充）。<b>日期不精确的 ${fuzzy} 条已全部纳入</b>：${g.month} 条仅到月份（标注「N 月」）、${g.unknown} 条时间待补充，均保留原文链接，不推测具体发布日期。</div>`;
-  // 直观展示「确实纳入了」：列出月份最新、热度最高的 2 条月精度条目，带原文链接
-  const monthTop = d.pool.filter(x=>dateGrade(x.it.d)==='month').slice(0,2);
-  const extra = fuzzy ? `<div class="tf-included"><span>已纳入 · 日期不精确</span>${
-      monthTop.map(x=>`<a href="${x.it.u && x.it.u!=='#' ? x.it.u : '#'}" ${x.it.u && x.it.u!=='#' ? 'target="_blank" rel="noopener"' : ''} title="${escapeHtml(dateTitle(x.it.d))}">${escapeHtml(dateLabel(x.it.d))} · ${escapeHtml(x.it.t)}</a>`).join('')
-    }<em>共 ${fuzzy} 条 · 详见左侧「资讯日报」</em></div>` : '';
   box.hidden = false;
   box.innerHTML = `
     <div class="tf-head">
@@ -3245,7 +3225,7 @@ function renderTopFlash(){
             <span class="tf-mt" title="${escapeHtml(dateTitle(x.it.d))}">${escapeHtml(dateLabel(x.it.d))} · ${escapeHtml(x.card.name)}${x.it.h ? ' · 热度 '+x.it.h : ''}</span>
           </span>
         </a>`).join('')}
-    </div>${extra}${note}`;
+    </div>`;
 }
 
 /* 全站池：只聚合真实抓取条目（flatItems 即首页全部 DATA），
