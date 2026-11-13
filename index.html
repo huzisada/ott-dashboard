@@ -1082,6 +1082,18 @@
     color:var(--accent);font-size:12.5px;font-weight:700;font-family:inherit;padding:2px 0}
   .cf-more:hover{color:#3be0bc}
   .cf-more svg{width:13px;height:13px}
+  /* LLM 早报正文与角标引用 */
+  .llm-p{margin:0 0 9px;font-size:12.5px;line-height:1.85;color:var(--tx-mid);text-align:justify}
+  .llm-p:last-child{margin-bottom:0}
+  .llm-lead{color:var(--tx);font-weight:500}
+  .cite{
+    display:inline-block;margin:0 1px;padding:0 4px;border-radius:5px;
+    font-size:9.5px;line-height:1.5;vertical-align:super;text-decoration:none;
+    color:var(--tx-dim2);background:rgba(255,255,255,.06);border:1px solid var(--line);
+  }
+  a.cite:hover{color:var(--accent);border-color:rgba(11,197,160,.4);background:var(--accent-soft)}
+  sup.cite{pointer-events:none}
+
   /* ============ 首页 AI 助手 · 右栏全站总结 ============ */
   .ai-side .side-nm .side-date{
     display:inline-block;margin-left:4px;padding:1px 6px;border-radius:5px;
@@ -3755,38 +3767,34 @@ function llmSummary(){
   if(S.data_stamp && META.generated_at && S.data_stamp !== META.generated_at) return null;
   return S;
 }
-/* 渲染 DeepSeek 版右栏：今日重点 → 整体观察 → 分节要点，全部可溯源 */
+/* 渲染 DeepSeek 版右栏（早报式连贯叙述）：
+   正文不罗列标题，引用处以低调角标 [n] 标注，点击跳原文 */
 function renderLLMDaily(S, body, meta){
   const dd = document.getElementById('dailyDate');
   const t = (S.generated_at||'').slice(5,16).replace('T',' ');
   if(dd) dd.textContent = t ? t.slice(0,5) : '—';
   if(meta) meta.textContent = `DeepSeek 总结 · 覆盖 ${S.n_pool} 条 · 正文 ${S.n_candidates} 条（${S.n_fulltext||0} 条全文） · ${t}`;
 
-  const link = (x)=> x.u && x.u!=='#' ? `<a href="${x.u}" target="_blank" rel="noopener" style="color:var(--tx);text-decoration:none">${escapeHtml(x.t)}</a>` : escapeHtml(x.t);
-  const point = p => `<div style="padding:7px 0;border-bottom:1px dashed var(--line)">
-      <div style="font-size:12.5px;line-height:1.6">${link(p)}</div>
-      <div style="font-size:11px;color:var(--tx-dim2);margin:3px 0" title="${escapeHtml(dateTitle(p.d))}">（${escapeHtml(dateLabel(p.d))}，${escapeHtml(p.src)}，${escapeHtml(p.cat)}）</div>
-      ${p.note ? `<div style="font-size:11.5px;color:var(--tx-dim);line-height:1.6">→ ${escapeHtml(p.note)}</div>` : ''}
-    </div>`;
-  const hl = (S.highlights||[]).map((x,i)=>`<div style="padding:6px 0;display:flex;gap:8px">
-      <span style="color:var(--accent);font-weight:700;font-size:12px;flex-shrink:0">${i+1}</span>
-      <span style="flex:1;min-width:0">
-        <span style="font-size:12.5px">${link(x)}</span>
-        ${x.why ? `<span style="display:block;font-size:11.5px;color:var(--tx-dim);line-height:1.6;margin-top:2px">${escapeHtml(x.why)}</span>`:''}
-      </span>
-    </div>`).join('');
+  const refs = {};
+  (S.refs||[]).forEach(r=>{ refs[r.idx] = r; });
+  // 正文：角标 [n] 转为可点小数字，换行转为段落
+  const prose = txt => escapeHtml(txt||'').replace(/\[(\d+)\]/g, (m,n)=>{
+    const r = refs[n];
+    if(!r || !r.u || r.u==='#') return `<sup class="cite">${n}</sup>`;
+    return `<a class="cite" href="${r.u}" target="_blank" rel="noopener" title="${escapeHtml(r.t)}">${n}</a>`;
+  }).split('\n').filter(x=>x.trim()).map(x=>`<p class="llm-p">${x}</p>`).join('');
+
   const secs = (S.sections||[]).map((sg,i)=>`<div class="seg">
-      <h5><i>${i+1}</i>${escapeHtml(sg.title)}<em class="seg-n">${(sg.points||[]).length} 条</em></h5>
-      ${(sg.points||[]).map(point).join('')}
+      <h5><i>${i+1}</i>${escapeHtml(sg.title)}</h5>
+      ${prose(sg.text)}
     </div>`).join('');
-  // 今日重点已在顶部「今日重点速览」里展示（含理由），此处不再重复
   body.innerHTML = `
     <div class="seg">
-      <h5><i>☰</i>整体观察</h5>
-      <p style="font-size:12px;line-height:1.7;color:var(--tx-dim)">${escapeHtml(S.overview)}</p>
+      <h5><i>☰</i>导语</h5>
+      <p class="llm-p llm-lead">${escapeHtml(S.overview)}</p>
     </div>
     ${secs}
-    <div style="padding:10px 0 4px;font-size:10.5px;color:var(--tx-dim2);line-height:1.6">由 ${escapeHtml(S.model||'LLM')} 基于当日抓取正文生成（${S.n_fulltext||0}/${S.n_candidates||0} 条为全文，其余用标题摘要）；每个要点都可点标题回原文核对。</div>`;
+    <div style="padding:10px 0 4px;font-size:10.5px;color:var(--tx-dim2);line-height:1.6">由 ${escapeHtml(S.model||'LLM')} 基于当日抓取正文撰写（${S.n_fulltext||0}/${S.n_candidates||0} 条为全文，其余用标题摘要）；正文角标可点击回原文核对。</div>`;
 }
 
 /* 首页右侧栏 AI 助手：优先展示 LLM 总结；无总结/数据不匹配时回退规则版

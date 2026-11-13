@@ -156,14 +156,17 @@ def gather_material(cands):
 def call_llm(blocks, api_key, base_url, model):
     """调用 OpenAI 兼容接口，返回 dict；失败抛异常"""
     system = (
-        "你是严谨的 OTT/IPTV 行业资讯分析师。只基于用户提供的材料总结，"
+        "你是 OTT/IPTV 行业日报的资深编辑。只基于用户提供的材料写作，"
         "禁止引入材料之外的事实、数字或判断；材料里「日期待补充」的条目不得推断日期。"
         "输出严格 JSON（不要 markdown 代码块），结构：\n"
-        '{"overview":"130字内的整体总结，说明当天资讯的核心脉络",'
-        '"highlights":[{"idx":1,"t":"标题","why":"30字内为什么值得重点看"},...3条],'
-        '"sections":[{"title":"政策 / 监管","points":[{"idx":1,"t":"标题","note":"60字内要点解读"},...2-5条]},...2-4个分节]}\n'
-        "highlights 与 points 里的 idx 必须是材料的编号，t 必须照抄材料标题。"
-        "分节建议：政策 / 监管、竞品 / 厂商、行业 / 数据。"
+        '{"overview":"100字内的导语，点明本批资讯的核心脉络",'
+        '"highlights":[{"idx":1,"why":"30字内为什么值得重点看"},...3条],'
+        '"sections":[{"title":"行业大势","text":"200-400字的连贯分析，2-3个自然段，用\\n分段"},...3-5个分节]}\n'
+        "sections 是行业早报风格：不要罗列标题，直接以事实与数据成文，"
+        "像给决策者写简报一样有观点、有取舍、成段叙述。"
+        "引用某条材料时在对应句末加方括号编号角标，如「激活家庭3.47亿户[1]」；"
+        "编号必须是材料编号，不得虚构，同一句可引多个如[1][5]。"
+        "分节标题建议：行业大势、市场格局 / 竞品、国内大屏、政策与监管；可按材料实际内容调整。"
     )
     user = "材料如下：\n\n" + "\n\n".join(blocks)
     payload = {
@@ -259,6 +262,19 @@ def main():
             res.append(row)
         return res
 
+    sections = [
+        {"title": (s.get("title") or "").strip(),
+         "text": re.sub(r"\s*\n\s*\n\s*", "\n", (s.get("text") or "").strip())}
+        for s in (out.get("sections") or []) if (s.get("title") or "").strip() and (s.get("text") or "").strip()
+    ]
+    highlights = attach(out.get("highlights"), ["t", "why"])[:3]
+    # 角标引用表：正文 [n] → 原文链接（含 highlights 引用的编号）
+    cited = set()
+    for sg in sections:
+        cited.update(int(n) for n in re.findall(r"\[(\d+)\]", sg["text"]))
+    for h in highlights:
+        cited.add(h["idx"])
+    refs = [resolve_meta(cands[n - 1], n) for n in sorted(cited) if 1 <= n <= len(cands)]
     summary = {
         "provider": base_url.split("//")[-1].split("/")[0],
         "model": model,
@@ -269,12 +285,9 @@ def main():
         "n_pool": sum(len(c.get("items", [])) for c in cards),
         "usage": out.get("_usage", {}),
         "overview": (out.get("overview") or "").strip(),
-        "highlights": attach(out.get("highlights"), ["t", "why"])[:3],
-        "sections": [
-            {"title": (s.get("title") or "").strip(),
-             "points": attach(s.get("points"), ["t", "note"])}
-            for s in (out.get("sections") or []) if (s.get("title") or "").strip()
-        ],
+        "highlights": highlights,
+        "sections": sections,
+        "refs": refs,
     }
     if not summary["overview"] and not summary["sections"]:
         raise RuntimeError("模型输出缺少 overview/sections，视为失败不写文件")
@@ -282,7 +295,7 @@ def main():
     dst = BASE / "summary.json"
     dst.write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
     log(f"已写入 {dst}：分节 {len(summary['sections'])}，"
-        f"要点 {sum(len(s['points']) for s in summary['sections'])} 条，"
+        f"角标引用 {len(summary['refs'])} 个，"
         f"usage={json.dumps(summary['usage'])}")
     return 0
 
