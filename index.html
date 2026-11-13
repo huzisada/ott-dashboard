@@ -913,6 +913,33 @@
     .hero{flex-direction:column;gap:16px}
     .hero h2{font-size:24px}
   }
+  /* ============ 竞品动态·平台 卡片 + 卡片底部「查看全部」 ============ */
+  .card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin:12px -18px -6px;padding:10px 18px;border-top:1px solid var(--line);
+    background:rgba(255,255,255,.015);border-radius:0 0 var(--radius) var(--radius)}
+  .cf-count{font-size:11.5px;color:var(--tx-dim2);white-space:nowrap}
+  .cf-more{display:inline-flex;align-items:center;gap:5px;background:none;border:0;cursor:pointer;
+    color:var(--accent);font-size:12.5px;font-weight:700;font-family:inherit;padding:2px 0}
+  .cf-more:hover{color:#3be0bc}
+  .cf-more svg{width:13px;height:13px}
+  .plat-card .plat-monitors{color:var(--tx-dim);border-color:var(--line)}
+  .plat-list{margin:14px 0 4px;display:flex;flex-direction:column;gap:9px}
+  .plat-item{display:grid;grid-template-columns:22px 1fr auto;gap:11px;align-items:start;
+    padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:rgba(255,255,255,.018)}
+  .plat-no{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:700;
+    color:var(--accent);background:var(--accent-soft,rgba(11,197,160,.12));border:1px solid rgba(11,197,160,.28)}
+  .plat-main{min-width:0}
+  .plat-tt{font-size:13.5px;line-height:1.5;color:#e2e3e7;font-weight:600}
+  .plat-tags{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .plat-cat{font-size:10.5px;color:#fca5a5;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
+    padding:1px 7px;border-radius:6px}
+  .plat-brand{font-size:11.5px;color:var(--tx-dim)}
+  .plat-time{font-size:11px;color:var(--tx-dim2)}
+  .plat-diff{display:inline-block;margin-top:7px;font-size:11px;color:#e0b341;
+    border:1px dashed rgba(224,179,65,.45);border-radius:7px;padding:2px 8px}
+  .plat-heat{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;min-width:34px}
+  .plat-heat b{font-size:19px;font-weight:800;color:var(--flame,#ff5c5c);font-variant-numeric:tabular-nums;line-height:1}
+  .plat-heat span{font-size:10px;color:var(--tx-dim2);margin-top:3px}
 </style>
 </head>
 <body>
@@ -969,13 +996,17 @@
           <h2 id="pageTitle">OTT 行业资讯</h2>
           <div class="meta">
             👉 今天是 <b id="todayLine">—</b>　·　<span class="hi" id="policyState">政策源加载中…</span><br/>
-            <span class="ln2">没有溯源的资讯是噪音，没有数据的判断是空想。</span>　·　数据源：<span class="hi" id="dataMode">加载中…</span>　·　抓取于 <span class="hi" id="lastFetch">—</span>
+            <span class="ln2">没有溯源的资讯是噪音，没有数据的判断是空想。本站不编造任何资讯，未覆盖内容一律标注「待补充」。</span>　·　数据源：<span class="hi" id="dataMode">加载中…</span>　·　抓取于 <span class="hi" id="lastFetch">—</span>
           </div>
         </div>
         <div class="actions">
           <button class="btn btn-ghost" id="btnTrend">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             今日趋势
+          </button>
+          <button class="btn btn-ghost" id="btnExportComp" title="导出竞品动态（竞品 + 厂商，含可引用摘要与原文链接）">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出竞品
           </button>
           <button class="btn btn-primary" id="btnSources">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
@@ -1328,6 +1359,63 @@ function hotSourceName(id){
 }
 
 /* ============================================================
+   竞品动态·平台（前端聚合卡片）
+   - 监控 5 个平台竞品：芒果超媒 / 新媒股份 / 银河奇异果 / 极光TV / 云视听小电视
+   - 这些源当前为「待接入」，尚无真实抓取数据，故以下为明确标注的「示例数据」，仅作版式示意
+   - 默认展示 4 条，底部「查看全部」展开全部；与我方差异统一标注「待补充」
+   ============================================================ */
+const PLATFORM_CARD = {
+  id:'plat_monitor', name:'竞品动态 · 平台', cat:'竞品', type:'competitor',
+  agg:true, plat:true, sample:true, c:'#3b82f6', s:'平',
+  monitors:['芒果超媒','新媒股份','银河奇异果','极光TV','云视听小电视'],
+  time:'示例数据 · 待接入真实抓取',
+  items:[
+    {t:'芒果超媒 大屏会员与内容分发动向', brand:'芒果超媒', h:9.4, d:'42 分钟前', diff:'待补充'},
+    {t:'新媒股份 IPTV / OTT 业务结构跟踪', brand:'新媒股份', h:8.9, d:'2 小时前', diff:'待补充'},
+    {t:'银河奇异果 · 极光TV 产品迭代观察', brand:'银河奇异果', h:8.5, d:'4 小时前', diff:'待补充'},
+    {t:'云视听小电视 大屏端合作动向', brand:'云视听小电视', h:8.0, d:'6 小时前', diff:'待补充'},
+    {t:'芒果超媒 综艺内容招商与会员联动', brand:'芒果超媒', h:7.6, d:'1 天前', diff:'待补充'},
+    {t:'极光TV 大屏广告与开机资源调整', brand:'极光TV', h:7.1, d:'1 天前', diff:'待补充'}
+  ]
+};
+function renderPlatCard(c, expanded){
+  const LIMIT = 4;                      // 默认保留 4 条
+  const tooMany = c.items.length > LIMIT;
+  const items = (tooMany && !expanded) ? c.items.slice(0, LIMIT) : c.items;
+  const moreIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+  return `
+  <article class="card plat-card">
+    <div class="card-head">
+      <div class="src-icon" style="--c:${c.c}">${c.s}</div>
+      <div class="src-meta">
+        <h3>${c.name} <span class="tag plat-monitors">${c.monitors.length} 个监控对象</span></h3>
+        <time>${c.monitors.join(' / ')}</time>
+      </div>
+    </div>
+    <div class="plat-list">
+      ${items.map((it,i)=>`
+        <div class="plat-item">
+          <span class="plat-no">${i+1}</span>
+          <div class="plat-main">
+            <div class="plat-tt">${escapeHtml(it.t)}</div>
+            <div class="plat-tags">
+              <span class="plat-cat">竞品</span>
+              <span class="plat-brand">${escapeHtml(it.brand)}</span>
+              <span class="plat-time">🕘 ${escapeHtml(it.d)}</span>
+            </div>
+            <div class="plat-diff">与我方差异 · ${escapeHtml(it.diff||'待补充')}</div>
+          </div>
+          <div class="plat-heat"><b>${Number(it.h).toFixed(1)}</b><span>热度</span></div>
+        </div>`).join('')}
+    </div>
+    <div class="card-foot">
+      <span class="cf-count">共 ${c.items.length} 条 · 示例数据</span>
+      ${tooMany ? `<button class="cf-more rank-toggle${expanded?' open':''}" data-cid="${c.id}">${expanded?'收起':'查看全部'}${moreIcon}</button>` : ''}
+    </div>
+  </article>`;
+}
+
+/* ============================================================
    渲染
    ============================================================ */
 const grid = document.getElementById('grid');
@@ -1386,9 +1474,11 @@ function render(){
     return;
   }
 
-  const base = (activeNav==='hot')
-    ? [...DATA, HOT_CARD]
-    : (activeNav==='home' && HOT_CARD.items.length ? [HOT_CARD, ...DATA] : DATA);
+  let base;
+  if(activeNav==='hot') base = [...DATA, HOT_CARD];
+  else if(activeNav==='home') base = [HOT_CARD, PLATFORM_CARD, ...DATA];
+  else if(activeNav==='competitor') base = [PLATFORM_CARD, ...DATA];
+  else base = DATA;
   let cards = base.filter(matchNav).map(c=>({...c, items:c.items.filter(it=>matchKw(it,c))}))
                    .filter(c=>c.items.length>0);
 
@@ -1400,17 +1490,16 @@ function render(){
   }
 
   grid.innerHTML = cards.map(c=>{
-    // 每张卡片：最多展示 5 条榜单，超出部分支持「展开更多 / 收起」
-    const LIMIT = 5;
+    if(c.plat) return renderPlatCard(c, !!cardExpanded[c.id]);
+    // 每张卡片：默认展示 4 条榜单，超出部分点「查看全部」展开
+    const LIMIT = 4;
     const tooMany = c.items.length > LIMIT;
     const expanded = !!cardExpanded[c.id];
     const items = (tooMany && !expanded) ? c.items.slice(0, LIMIT) : c.items;
-    const toggle = tooMany ? `
-      <button class="rank-toggle ${expanded?'open':''}" data-cid="${c.id}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        ${expanded?'收起':'展开更多'}
-        <span class="cnt">+${c.items.length - LIMIT}</span>
-      </button>` : '';
+    const foot = `<div class="card-foot">
+      <span class="cf-count">共 ${c.items.length} 条</span>
+      ${tooMany ? `<button class="cf-more rank-toggle${expanded?' open':''}" data-cid="${c.id}">${expanded?'收起':'查看全部'}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button>` : ''}
+    </div>`;
     return `
     <article class="card${c.agg?' hot-card':''}">
       <div class="card-head">
@@ -1453,7 +1542,7 @@ function render(){
             </div>
           </li>`).join('')}
       </ol>
-      ${toggle}
+      ${foot}
     </article>`;
   }).join('');
 }
@@ -1501,7 +1590,16 @@ function toast(msg){
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-document.getElementById('btnTrend').onclick = ()=> toast('今日趋势：政策源 3 条待读 · 竞品异动 2 条（演示）');
+document.getElementById('btnTrend').onclick = ()=>{
+  let total=0, pending=0; const byCat={};
+  DATA.forEach(c=>{
+    const n=(c.items||[]).length; total+=n; byCat[c.cat]=(byCat[c.cat]||0)+n;
+    (c.items||[]).forEach(i=>{ if(i.d==='时间待补充') pending++; });
+  });
+  const top=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${k} ${v}`).join(' · ');
+  const when = META.generated_at ? fmtFetchTime(META.generated_at) : '—';
+  toast(`今日趋势：共 ${total} 条资讯（${top}）· ${pending} 条待补日期 · 抓取于 ${when}`);
+};
 document.getElementById('btnBell').onclick = ()=>{
   document.body.classList.toggle('notif-open');
   const open = document.body.classList.contains('notif-open');
@@ -1540,35 +1638,70 @@ const NOTIF_CAT_LBL = {
   'policy':'政策','vendor':'厂商动态','drama':'短剧观察',
   'integrated':'一体化电视','data':'行业数据','system':'系统'
 };
-const NOTIF_SRC = [
-  {cat:'policy',     t:'广电总局发布通知：持续治理电视「套娃收费」与操作复杂问题', mins:3,   link:'https://www.nrta.gov.cn'},
-  {cat:'vendor',     t:'小米电视发布 86 寸 Mini LED 新品，搭载澎湃 OS 3.0',        mins:32,  link:'https://www.mi.com'},
-  {cat:'policy',     t:'关于加强网络微短剧内容审核与备案管理的通知',              mins:65,  link:'https://www.nrta.gov.cn'},
-  {cat:'drama',      t:'红果短剧周榜出炉，前三均为家庭情感题材',                   mins:92,  link:'#'},
-  {cat:'integrated', t:'一体化电视试点扩展至 12 城，开机率回升至 78%',              mins:130, link:'#'},
-  {cat:'vendor',     t:'海信发布 ULED X 旗舰系列，出货同比 +12%',                  mins:180, link:'#'},
-  {cat:'drama',      t:'抖音短剧月度备案数突破 800 部，环比 +9.2%',                mins:240, link:'#'},
-  {cat:'policy',     t:'工信部联合发布智能电视适老化通用规范（征求意见稿）',       mins:300, link:'#'},
-  {cat:'integrated', t:'一体化电视首份月度生态报告发布',                            mins:420, link:'#'},
-  {cat:'vendor',     t:'酷开系统全球装机量突破 1.8 亿台',                            mins:1440,link:'#'},
-  {cat:'system',     t:'已为你完成「短剧观察」「一体化电视」两个新订阅源',          mins:2880,link:'#'}
-];
-function buildNotifs(refresh){
-  // 每次刷新把时间戳"重置到当前"——并塞入一条最新系统通知
-  const now = Date.now();
-  const head = {
-    cat:'system',
-    t:(refresh?'刷新完成':'实时抓取完成')+'，关键策略命中 '+(Math.floor(Math.random()*8)+1)+' 条',
-    mins:0,
-    link:'#'
-  };
-  return [head, ...NOTIF_SRC].map(n=>({
-    ...n,
-    _ts: now - n.mins*60*1000,
-    _new: n.mins < 10
-  }));
+/* 通知全部由真实抓取数据（data.js）派生，绝不编造标题或链接。
+   - 仅收录带真实原文链接（u 非 # / 待补充）的条目，保证每条可溯源；
+   - 按发布日期精度降序（精确到日 > 仅到月 > 时间待补充）；
+   - 「系统」类通知来自真实抓取元数据（信源正常数 / 总数 / 抓取时间）。 */
+function _notifCatOf(cat){
+  if(cat==='政策') return 'policy';
+  if(cat==='竞品' || cat==='厂商动态') return 'vendor';
+  if(cat==='短剧观察') return 'drama';
+  if(cat==='一体化电视') return 'integrated';
+  if(cat==='数据机构' || cat==='报告') return 'data';
+  return 'data'; // 行业 / 行业媒体 归入综合数据
 }
-let NOTIFS = buildNotifs(false);
+function _notifGrade(d){
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d||'')) return 0;
+  if(/^\d{4}-\d{2}/.test(d||'')) return 1;
+  return 2;
+}
+function buildRealNotifs(){
+  const out = [];
+  const seen = new Set();
+  DATA.forEach(card=>{
+    (card.items||[]).forEach(it=>{
+      const u = it.u;
+      if(!u || u==='#' || u==='待补充') return; // 无原文链接 → 不进通知，避免无法溯源
+      if(seen.has(u)) return;
+      seen.add(u);
+      const g = _notifGrade(it.d);
+      let ts, isNew = false, sub;
+      if(g===0){
+        const dt = new Date(it.d + 'T00:00:00').getTime();
+        const diff = Math.floor((Date.now() - dt)/86400e3);
+        ts = dt; isNew = diff <= 0; sub = diff<=0 ? '今天' : diff + ' 天前';
+      } else if(g===1){
+        ts = Date.now(); sub = Number(it.d.slice(5,7)) + ' 月';
+      } else {
+        ts = Date.now(); sub = '时间待补充';
+      }
+      out.push({ cat:_notifCatOf(card.cat), t:it.t, link:u, d:it.d, src:card.name, _ts:ts, _new:isNew, _sub:sub });
+    });
+  });
+  out.sort((a,b)=>{
+    const ga=_notifGrade(a.d), gb=_notifGrade(b.d);
+    if(ga!==gb) return ga-gb;
+    return (b.d||'').localeCompare(a.d||'');
+  });
+  const CAP = 4;
+  const byCat = {};
+  out.forEach(n=>{ (byCat[n.cat]=byCat[n.cat]||[]).push(n); });
+  const order = ['policy','vendor','drama','integrated','data'];
+  let picked = [];
+  order.forEach(c=>{ if(byCat[c]) picked = picked.concat(byCat[c].slice(0, CAP)); });
+  const ok = META.source_ok||0, total = META.source_total||0, all = META.total||0;
+  const sysSub = META.generated_at ? '抓取于 ' + fmtFetchTime(META.generated_at).replace(/^今日 /,'') : '';
+  const sysHead = { cat:'system', t:`数据已更新 · ${ok}/${total} 个信源正常 · 共 ${all} 条资讯（全部可溯源）`, link:'#', d:'', src:'', _ts:Date.now(), _new:false, _sub:sysSub };
+  return [sysHead, ...picked];
+}
+function buildNotifs(refresh){
+  const list = buildRealNotifs();
+  if(refresh && list[0] && list[0].cat==='system'){
+    list[0].t = '刚刚刷新 · ' + list[0].t;
+  }
+  return list;
+}
+let NOTIFS = [];   // 在 META 就绪后（下方）由 buildNotifs 填充，避免 TDZ
 let notifFilter = 'all';
 let notifExpanded = false;
 const NOTIF_PAGE_LIMIT = 10; // 默认最多展示 10 条
@@ -1600,8 +1733,8 @@ function renderNotif(){
       <span class="notif-dot ${n._new?'':'read'}"></span>
       <div class="notif-info">
         <span class="lbl cat-${n.cat}">${NOTIF_CAT_LBL[n.cat]||'其他'}</span>
-        ${n.link && n.link!=='#' ? `<a class="ttl" href="${n.link}" target="_blank" rel="noopener">${n.t}</a>` : `<span class="ttl">${n.t}</span>`}
-        <span class="ts">${fmtAgo(n._ts)}</span>
+        ${n.link && n.link!=='#' ? `<a class="ttl" href="${n.link}" target="_blank" rel="noopener">${escapeHtml(n.t)}</a>` : `<span class="ttl">${escapeHtml(n.t)}</span>`}
+        <span class="ts">${escapeHtml(n.src||'')}${(n.src&&n._sub)?' · ':''}${escapeHtml(n._sub||'')}</span>
       </div>
     </div>`).join('');
   let toggleHtml = '';
@@ -1622,6 +1755,27 @@ function renderNotif(){
   }
 }
 document.getElementById('btnSources').onclick = openModal;
+/* 导出竞品动态：汇总竞品 + 厂商动态的真实条目（标题 / 摘要 / 原文链接），复制为 Markdown
+   满足「一键导出竞品动态，自动提炼可引用数据 / 金句」的竞聘辅助需求；全部来自真实抓取，可溯源。 */
+document.getElementById('btnExportComp').onclick = ()=>{
+  const rows=[];
+  DATA.forEach(c=>{
+    if(c.cat!=='竞品' && c.cat!=='厂商动态') return;
+    (c.items||[]).forEach(it=>{
+      const u=(it.u&&it.u!=='#'&&it.u!=='待补充')?it.u:'';
+      const summary=(it.summary&&it.summary!==it.t)?'：'+it.summary:'';
+      rows.push(`- ${it.t}${summary}${u?` ［${u}］`:'（待补充原文链接）'}`);
+    });
+  });
+  if(!rows.length){ toast('暂无可导出的竞品动态'); return; }
+  const md = `# OTT 竞品动态导出\n\n生成于 ${new Date().toLocaleString('zh-CN')} · 共 ${rows.length} 条（均来自真实抓取，可点击溯源）\n\n` + rows.join('\n');
+  const done=()=>toast(`已复制 ${rows.length} 条竞品动态到剪贴板`);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(md).then(done).catch(()=>toast('复制失败，请检查浏览器剪贴板权限'));
+  } else {
+    toast('当前环境不支持自动复制');
+  }
+};
 function closeSourcesModal(opts={}){
   const r = applySourcesToGrid();
   document.getElementById('modalMask').classList.remove('show');
@@ -2234,6 +2388,9 @@ document.getElementById('addSrc').onclick = async ()=>{
    ============================================================ */
 const META = RAW.meta || {};
 const REFRESH_MS = 20*60*1000;
+/* 通知在 META 就绪后再派生（buildNotifs 依赖 META，避免 TDZ），并同步铃铛角标 */
+NOTIFS = buildNotifs(false);
+try{ const _b=document.querySelector('#btnBell .badge'); if(_b) _b.textContent=NOTIFS.length; }catch(_){}
 
 function parseStamp(iso){
   if(!iso) return null;

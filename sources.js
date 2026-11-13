@@ -134,6 +134,61 @@ window.__OTT_SRC_CONFIG__ = {
    "max_items": 40,
    "enabled": true,
    "note": "AI 行业媒体，用于订阅源管理测试"
+  },
+  {
+   "id": "mgtv_mango",
+   "name": "芒果超媒",
+   "cat": "竞品",
+   "type": "competitor",
+   "freq": "workday",
+   "list_url": "https://www.mgtv.com",
+   "engine": "static",
+   "enabled": false,
+   "note": "待接入：需补充官网/投资者关系页抓取适配器（财报、内容上线等）"
+  },
+  {
+   "id": "xmedia",
+   "name": "新媒股份",
+   "cat": "竞品",
+   "type": "competitor",
+   "freq": "workday",
+   "list_url": "https://www.gd-smg.cn",
+   "engine": "static",
+   "enabled": false,
+   "note": "待接入：需补充官网/公告抓取适配器"
+  },
+  {
+   "id": "yhqyg",
+   "name": "银河奇异果",
+   "cat": "竞品",
+   "type": "competitor",
+   "freq": "workday",
+   "list_url": "https://www.iqiyi.com",
+   "engine": "static",
+   "enabled": false,
+   "note": "待接入：爱奇艺 TV 端（银河互联网电视），需补适配器"
+  },
+  {
+   "id": "jgtv",
+   "name": "极光TV",
+   "cat": "竞品",
+   "type": "competitor",
+   "freq": "workday",
+   "list_url": "https://www.jdgdtv.com",
+   "engine": "static",
+   "enabled": false,
+   "note": "待接入：京东联合康佳的 OTТ 终端，需补适配器"
+  },
+  {
+   "id": "ystxds",
+   "name": "云视听小电视",
+   "cat": "竞品",
+   "type": "competitor",
+   "freq": "workday",
+   "list_url": "https://www.bilibili.com",
+   "engine": "static",
+   "enabled": false,
+   "note": "待接入：哔哩哔哩 TV 端（云视听小电视），需补适配器"
   }
  ],
  "keywords": {
