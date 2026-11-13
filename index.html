@@ -775,8 +775,18 @@
     background:linear-gradient(180deg,var(--panel-a),var(--panel-b));
     border:1px solid var(--line);border-radius:var(--radius);
     padding:16px 16px 14px;max-height:calc(100vh - 110px);overflow-y:auto;
-    animation:fade .25s ease both
+    animation:fade .25s ease both;
+    /* 面板内容超出时要能看出「还有下文」：常显细滚动条 */
+    scrollbar-width:thin;scrollbar-color:rgba(11,197,160,.45) transparent;
+    overscroll-behavior:contain
   }
+  .ai-side::-webkit-scrollbar{width:9px}
+  .ai-side::-webkit-scrollbar-track{background:transparent}
+  .ai-side::-webkit-scrollbar-thumb{
+    background:rgba(11,197,160,.32);border-radius:9px;
+    border:2px solid transparent;background-clip:padding-box
+  }
+  .ai-side::-webkit-scrollbar-thumb:hover{background:rgba(11,197,160,.6);background-clip:padding-box}
   /* 右栏容器：竖线画在面板左侧的留白处（框外），且不被 overflow 裁切 */
   .rcol{position:relative}
   .rcol:has(.ai-side.collapsed){display:none;position:static}
@@ -955,6 +965,12 @@
     font-size:10.5px;line-height:1.6;color:var(--tx-dim2);
     padding:7px 0 2px;border-top:1px dashed var(--line)
   }
+  /* 首页 AI 助手：整块总结自然铺开，不设内部滚动，
+     避免「切一半」或被滚动容器裁掉，全文随页面滚动完整可读 */
+  .ai-side#dailySide{
+    position:static;max-height:none;height:auto;overflow:visible;
+    animation:none
+  }
 </style>
 </head>
 <body>
@@ -1107,7 +1123,7 @@
             </div>
           </div>
           <div class="side-meta"><span class="side-ai-ic">AI</span><span id="dailyMeta">基于最新抓取数据自动生成</span></div>
-          <div id="dailyBody"><div class="empty" style="padding:14px 4px">日报生成中…</div></div>
+          <div id="dailyBody"><div class="empty" style="padding:14px 4px">总结生成中…</div></div>
         </aside>
         </div>
       </div>
