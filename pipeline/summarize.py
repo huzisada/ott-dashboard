@@ -45,8 +45,10 @@ def log(msg):
 
 
 def load_data():
-    """读取 data.js（仓库根优先，其次管道产物），返回 (cards, meta)"""
-    for p in (ROOT / "data.js", BASE / "data" / "data.js"):
+    """读取 data.js（管道产物优先，其次仓库根），返回 (cards, meta)。
+    CI 里仓库根的 data.js 是上次部署的旧版本，与刚抓的新数据时间戳不一致，
+    会导致前端按「数据不匹配」回退规则版——所以必须优先读本次抓取的产物。"""
+    for p in (BASE / "data" / "data.js", ROOT / "data.js"):
         if p.is_file():
             txt = p.read_text(encoding="utf-8")
             m = re.search(r"=\s*(\{[\s\S]*\})\s*;?\s*$", txt)
