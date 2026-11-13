@@ -189,8 +189,12 @@
     background:linear-gradient(180deg,var(--panel-a),var(--panel-b));
     border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 6px;
     transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
-    animation:fade .4s ease both
+    animation:fade .4s ease both;
+    /* 同一行卡片被拉伸成等高时，内容不足的卡片让底部栏贴住卡片最底部，
+       避免「共 N 条 / 查看全部」悬在中间、下面空一大块 */
+    display:flex;flex-direction:column
   }
+  .card .card-foot{margin-top:auto}
   .card:hover{border-color:var(--line-strong);transform:translateY(-2px);box-shadow:0 18px 40px -24px rgba(0,0,0,.9)}
   .card.hot-card{border-color:rgba(255,122,89,.34)}
   .card.hot-card .src-icon{box-shadow:0 8px 22px -8px var(--c,#ff7a59)}
