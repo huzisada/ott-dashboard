@@ -190,9 +190,9 @@
     border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 6px;
     transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
     animation:fade .4s ease both;
-    /* 同一行卡片被拉伸成等高时，内容不足的卡片让底部栏贴住卡片最底部，
-       避免「共 N 条 / 查看全部」悬在中间、下面空一大块 */
-    display:flex;flex-direction:column
+    /* 固定高度：榜单区在卡片内部滚动，底部栏始终贴住卡片底边 */
+    height:var(--card-h,470px);
+    display:flex;flex-direction:column;position:relative
   }
   .card .card-foot{margin-top:auto}
   .card:hover{border-color:var(--line-strong);transform:translateY(-2px);box-shadow:0 18px 40px -24px rgba(0,0,0,.9)}
@@ -219,21 +219,44 @@
   .rank-list{list-style:none;margin:14px 0 8px;padding:0}
   .rank-list li{display:grid;grid-template-columns:20px 1fr;gap:11px;padding:11px 0;border-top:1px solid rgba(255,255,255,.045)}
   .rank-list li:first-child{border-top:0}
-  /* 榜单折叠：默认 5 条，超出部分展开/收起 */
-  .rank-toggle{
-    display:flex;justify-content:center;align-items:center;gap:6px;width:100%;
-    margin-top:8px;padding:8px 0;border-radius:9px;
-    background:rgba(255,255,255,.025);border:1px dashed var(--line);
-    color:var(--tx-mid);font-size:12.5px;font-weight:600;cursor:pointer;
-    font-family:inherit;transition:.15s
+  /* 榜单滚动区：卡片内滚动（替代「查看全部」）。
+     固定高度 = 4 条完整条目 + 下一行露出一截，明确提示下方还有内容；
+     上下边缘渐隐 + 常显细滚动条，可拖动。 */
+  .rank-scroll{
+    --vis:4;                              /* 首屏露出的完整条数，与 JS 的 CARD_VISIBLE 保持一致 */
+    --row-h:79px;                         /* 单条高度（标题最多 2 行 + 元信息） */
+    margin:2px 0 0;padding-right:9px;
+    max-height:calc(var(--row-h) * var(--vis) + 30px);
+    overflow-y:auto;overflow-x:hidden;
+    overscroll-behavior:contain;
+    scrollbar-width:none;                 /* 原生滚动条隐藏，改用自绘拖动条（位置更可控、颜色更明显） */
   }
-  .rank-toggle:hover{background:rgba(255,255,255,.06);color:#fff;border-color:var(--line-strong)}
-  .rank-toggle svg{width:13px;height:13px;transition:transform .2s}
-  .rank-toggle.open svg{transform:rotate(180deg)}
-  .rank-toggle .cnt{
-    background:var(--accent-soft);color:var(--accent);border-radius:999px;
-    padding:1px 8px;font-size:11px;font-weight:700;border:1px solid rgba(11,197,160,.35)
+  .rank-scroll.scrollable{
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 8px,#000 calc(100% - 12px),transparent 100%);
+            mask-image:linear-gradient(180deg,transparent 0,#000 8px,#000 calc(100% - 12px),transparent 100%);
   }
+  .rank-scroll.scrollable.at-top{-webkit-mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 12px),transparent 100%);
+            mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 12px),transparent 100%)}
+  .rank-scroll.scrollable.at-bottom{-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 8px,#000 100%);
+            mask-image:linear-gradient(180deg,transparent 0,#000 8px,#000 100%)}
+  .rank-scroll.scrollable.at-top.at-bottom{-webkit-mask-image:none;mask-image:none}
+  /* 滚动条：WebKit 常显细条（拖动条）。Chromium 新版默认浮层滚动条会自动隐藏，
+     用 ::-webkit-scrollbar 显式声明后改为占位常显样式。 */
+  .rank-scroll::-webkit-scrollbar{width:0;height:0}
+  /* 自绘拖动条：轨道 + 可拖动滑块 */
+  .rs-track{
+    position:absolute;top:8px;right:10px;bottom:48px;width:8px;border-radius:99px;
+    background:rgba(255,255,255,.10);opacity:0;transition:opacity .18s;z-index:2;
+  }
+  .card.rs-scrollable .rs-track{opacity:1}
+  .card:hover .rs-track{background:rgba(255,255,255,.16)}
+  .rs-thumb{
+    position:absolute;left:0;right:0;top:0;border-radius:99px;
+    background:rgba(255,255,255,.46);transition:background .15s;cursor:grab;
+  }
+  .rs-track:hover .rs-thumb,.rs-track.dragging .rs-thumb{background:var(--accent)}
+  .rs-track.dragging .rs-thumb{cursor:grabbing}
+  .rank-scroll .rank-list{margin:12px 0 0}
   .rank{font-size:13px;font-weight:700;color:var(--tx-dim2);font-variant-numeric:tabular-nums;line-height:1.55}
   .rank.top{color:var(--accent)}
   .item-title{
@@ -1360,8 +1383,8 @@ const nav = document.getElementById('nav');
 const pageTitle = document.getElementById('pageTitle');
 let activeNav = 'home';
 let keyword = '';
-// 卡片榜单展开状态：key = card.id，value = 是否展开
-let cardExpanded = {};
+// 卡片榜单：无需展开状态，改为卡片内滚动区（固定可见条数，其余滚动查看）
+const CARD_VISIBLE = 4;
 
 const TITLES = {
   home:'OTT 行业资讯', competitor:'竞品动态对标', data:'行业数据与报告', hot:'热点节目 · 剧集与综艺',
@@ -1427,14 +1450,11 @@ function render(){
   }
 
   grid.innerHTML = cards.map(c=>{
-    // 每张卡片：默认展示 4 条榜单，超出部分点「查看全部」展开
-    const LIMIT = 4;
-    const tooMany = c.items.length > LIMIT;
-    const expanded = !!cardExpanded[c.id];
-    const items = (tooMany && !expanded) ? c.items.slice(0, LIMIT) : c.items;
+    // 每张卡片：全部条目一次性渲染进固定高度的滚动区，卡片内滚动查看，不再有「查看全部」
+    const items = c.items;
+    const scrollable = items.length > CARD_VISIBLE;
     const foot = `<div class="card-foot">
-      <span class="cf-count">共 ${c.items.length} 条</span>
-      ${tooMany ? `<button class="cf-more rank-toggle${expanded?' open':''}" data-cid="${c.id}">${expanded?'收起':'查看全部'}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button>` : ''}
+      <span class="cf-count">共 ${items.length} 条${scrollable?' · 可滚动':''}</span>
     </div>`;
     return `
     <article class="card${c.agg?' hot-card':''}">
@@ -1460,6 +1480,7 @@ function render(){
           <time>${c.time}</time>
         </div>
       </div>
+      <div class="rank-scroll${scrollable?' scrollable':''}" data-cid="${c.id}">
       <ol class="rank-list">
         ${items.map((it,i)=>`
           <li>
@@ -1478,9 +1499,13 @@ function render(){
             </div>
           </li>`).join('')}
       </ol>
+      </div>
+      ${scrollable?`<div class="rs-track" aria-hidden="true"><div class="rs-thumb"></div></div>`:''}
       ${foot}
     </article>`;
   }).join('');
+  initRankScroll();
+  if(!_rsBound){ _rsBound = true; bindRankScrollbar(); }
 }
 
 /* ============ 交互 ============ */
@@ -1510,18 +1535,63 @@ document.getElementById('search').addEventListener('input', e=>{
   render();
   applySideFilter();
 });
-// 卡片榜单「展开更多 / 收起」折叠按钮：事件委托
-grid.addEventListener('click', e=>{
-  const t = e.target.closest('.rank-toggle');
-  if(!t) return;
-  const cid = t.dataset.cid;
-  if(!cid) return;
-  cardExpanded[cid] = !cardExpanded[cid];
-  render();
-  // 滚动到被点击的卡片顶端，让用户看到展开后的新内容
-  const btn = document.querySelector('.rank-toggle[data-cid="'+cid+'"]');
-  if(btn) btn.scrollIntoView({behavior:'smooth', block:'nearest'});
-});
+// 卡片内滚动区：滚动时在顶部/底部加渐隐，提示还有更多内容；自绘拖动条跟随
+function syncRankScroll(){
+  grid.querySelectorAll('.rank-scroll').forEach(box=>{
+    box.classList.toggle('at-top', box.scrollTop <= 2);
+    box.classList.toggle('at-bottom', box.scrollTop + box.clientHeight >= box.scrollHeight - 2);
+    const card = box.closest('.card');
+    const track = card && card.querySelector('.rs-track');
+    if(!track) return;
+    const thumb = track.querySelector('.rs-thumb');
+    const h = track.clientHeight;
+    const ratio = box.clientHeight / box.scrollHeight;
+    const th = Math.max(34, Math.round(h * ratio));
+    const maxScroll = box.scrollHeight - box.clientHeight;
+    const top = maxScroll > 0 ? (box.scrollTop / maxScroll) * (h - th) : 0;
+    thumb.style.height = th + 'px';
+    thumb.style.transform = `translateY(${Math.round(top)}px)`;
+  });
+}
+function initRankScroll(){
+  grid.querySelectorAll('.rank-scroll.scrollable').forEach(box=>{
+    box.classList.add('rs-scrollable');
+    const card = box.closest('.card'); if(card) card.classList.add('rs-scrollable');
+  });
+  syncRankScroll();
+}
+let _rsBound = false;
+function bindRankScrollbar(){
+  grid.addEventListener('scroll', e=>{
+    if(e.target.classList && e.target.classList.contains('rank-scroll')) syncRankScroll();
+  }, true);
+  // 拖动滑块 / 点击轨道定位
+  grid.addEventListener('mousedown', e=>{
+    const track = e.target.closest('.rs-track');
+    if(!track) return;
+    const card = track.closest('.card');
+    const box = card && card.querySelector('.rank-scroll');
+    if(!box) return;
+    e.preventDefault();
+    const thumb = track.querySelector('.rs-thumb');
+    const h = track.clientHeight, th = thumb.offsetHeight;
+    const maxScroll = box.scrollHeight - box.clientHeight;
+    const toScroll = (thumbTop) => { const r = (h - th) > 0 ? thumbTop / (h - th) : 0; box.scrollTop = r * maxScroll; };
+    const r0 = track.getBoundingClientRect();
+    const startY = e.clientY;
+    const trackY = startY - r0.top;
+    const onThumb = e.target.closest('.rs-thumb');
+    const thumbTop0 = box.scrollTop / (maxScroll || 1) * (h - th);
+    track.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    if(!onThumb) toScroll(trackY - th/2);      // 点空白处：滑块跳到该位置
+    const onMove = ev=>{ toScroll(thumbTop0 + (ev.clientY - startY)); syncRankScroll(); };
+    const onUp = ()=>{ track.classList.remove('dragging'); document.body.style.userSelect='';
+      window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+  });
+  window.addEventListener('resize', ()=>syncRankScroll());
+}
 
 let toastTimer;
 function toast(msg){
@@ -3213,7 +3283,7 @@ function dailyBuild(){
     const xs = groups[title];
     const rest = xs.length - AI_PER_SECTION;
     const more = rest > 0
-      ? `<div class="ai-more">另有 ${rest} 条未展开 · 可在左侧对应卡片点「查看全部」</div>` : '';
+      ? `<div class="ai-more">另有 ${rest} 条未展开 · 可在左侧对应卡片内滚动查看</div>` : '';
     return `<div class="seg">
       <h5><i>${secNo++}</i>${escapeHtml(title)}<em class="seg-n">${xs.length} 条</em></h5>
       ${xs.slice(0, AI_PER_SECTION).map(itemHtml).join('')}
