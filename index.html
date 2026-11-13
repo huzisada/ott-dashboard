@@ -816,7 +816,7 @@
   .ai-side .side-tools button{
     height:26px;padding:0 9px;border-radius:8px;background:transparent;border:1px solid var(--line);
     color:var(--tx-dim);font-size:11.5px;cursor:pointer;font-family:inherit;
-    display:inline-flex;align-items:center;gap:4px
+    display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex-shrink:0
   }
   .ai-side .side-tools button:hover{color:var(--accent);border-color:rgba(11,197,160,.35)}
   .ai-side .side-tools button.ic{padding:0;width:26px;justify-content:center}
@@ -825,7 +825,7 @@
   .ai-side .side-meta{
     display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:7px 10px;
     background:rgba(11,197,160,.06);border:1px solid rgba(11,197,160,.18);border-radius:9px;
-    font-size:11.5px;color:var(--tx-mid)
+    font-size:11.5px;color:var(--tx-mid);flex-wrap:wrap;row-gap:2px;line-height:1.5
   }
   .ai-side .side-meta .side-ai-ic{
     width:15px;height:15px;border-radius:50%;background:linear-gradient(135deg,#0BC5A0,#0a8f76);
@@ -940,6 +940,21 @@
   .plat-heat{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;min-width:34px}
   .plat-heat b{font-size:19px;font-weight:800;color:var(--flame,#ff5c5c);font-variant-numeric:tabular-nums;line-height:1}
   .plat-heat span{font-size:10px;color:var(--tx-dim2);margin-top:3px}
+  /* ============ 首页 AI 助手 · 右栏全站总结 ============ */
+  .ai-side .side-nm .side-date{
+    display:inline-block;margin-left:4px;padding:1px 6px;border-radius:5px;
+    background:rgba(11,197,160,.12);border:1px solid rgba(11,197,160,.28);
+    color:var(--accent);font-size:10.5px;font-weight:600;letter-spacing:0;
+    text-transform:none;vertical-align:middle
+  }
+  .ai-side .seg h5 .seg-n{
+    margin-left:auto;font-size:10.5px;font-weight:600;font-style:normal;
+    color:var(--tx-dim2);letter-spacing:0;text-transform:none;white-space:nowrap
+  }
+  .ai-side .ai-more{
+    font-size:10.5px;line-height:1.6;color:var(--tx-dim2);
+    padding:7px 0 2px;border-top:1px dashed var(--line)
+  }
 </style>
 </head>
 <body>
@@ -1075,10 +1090,14 @@
         <div class="rcol">
         <aside class="ai-side collapsed" id="dailySide">
           <div class="side-head">
-            <div class="side-av" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">日</div>
-            <div class="side-nm">OTT 资讯日报 · <span id="dailyDate">—</span></div>
+            <div class="side-av">AI</div>
+            <div class="side-nm">AI 助手 · 全站总结</div>
             <div class="side-tools">
-              <button id="dailyCopy" title="复制日报">
+              <button id="dailyRefresh" title="立即重新生成总结">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                刷新
+              </button>
+              <button id="dailyCopy" title="复制总结">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 复制
               </button>
@@ -1560,8 +1579,13 @@ nav.addEventListener('click', e=>{
     return;
   }
   if(document.body.classList.contains('ai-open')) aiOpen(false);
-  if(!document.getElementById('dailySide').classList.contains('collapsed')) dailyClose();
   activeNav = id;
+  // 首页：AI 助手常驻右侧栏并自动总结；用户手动关掉过（DAILY_KEY==='0'）则尊重选择
+  if(id==='home'){
+    if(localStorage.getItem(DAILY_KEY)!=='0') dailyOpen();
+  }else if(!document.getElementById('dailySide').classList.contains('collapsed')){
+    dailyClose(false);
+  }
   render();
 });
 document.getElementById('search').addEventListener('input', e=>{
@@ -1799,6 +1823,7 @@ function applySourcesToGrid(){
   keep.forEach(c => DATA.push(c));
   render();
   if(typeof applySideFilter === 'function') applySideFilter();
+  try{ aiSummarySync(); }catch(e){}   // 源开关改变 → 右栏总结同步更新
   return { total: DATA.length, hidden: offNames.size };
 }
 
@@ -2504,6 +2529,7 @@ async function doRefresh(){
     NOTIFS = buildNotifs(true);
     notifExpanded = false;
     if(document.body.classList.contains('notif-open')) renderNotif();
+    try{ aiSummarySync(); }catch(e){}   // 数据刷新 → 右栏 AI 总结同步更新
     const wait = Math.max(0, 600 - (Date.now()-t0));
     if(stamp && stamp !== _buildAtLoad){
       toast(`已载入最新数据：${(fresh.meta||{}).total||0} 条（${fmtFetchTime(stamp)}）`);
@@ -2709,7 +2735,7 @@ function aiOpen(open){
   if(open === wasOpen) return;
   if(open){
     // 打开助手：左侧导航栏保持原状（不再自动收起），用户手动折叠的状态也原样保留
-    dailyClose(); // 与日报右栏互斥
+    dailyClose(false); // 打开全屏助手时让位，不写偏好
     aiRenderPrefs();
     aiRenderSession();
   }
@@ -2961,7 +2987,7 @@ function aiSideShow(q){
   const qText = document.getElementById('aiSideQText');
   const meta = document.getElementById('aiSideMetaText');
   if(!q || !q.trim()){ side.classList.add('collapsed'); SIDE.q=''; const f=document.getElementById('aiSideFilter'); if(f) f.style.display='none'; return; }
-  dailyClose(); // 与日报右栏互斥
+  dailyClose(false); // 让位给关键词总结，不写偏好
   side.classList.remove('collapsed');
   qEl.style.display='flex'; qText.textContent = q;
   if(meta) meta.textContent = 'AI 正在检索并生成…';
@@ -3068,9 +3094,11 @@ function applySideFilter(){
    右侧：AI 资讯日报（可收缩，基于最新抓取数据本地生成）
    ============================================================ */
 const DAILY_KEY = 'ott_daily_open';
-function dailyClose(){
+/* persist=false 用于「临时让位」（切到别的导航、打开全屏助手、搜索结果互斥），
+   不写入偏好，回到首页仍自动展开；只有用户点 ✕ 才真正记住「已关闭」。 */
+function dailyClose(persist){
   document.getElementById('dailySide').classList.add('collapsed');
-  localStorage.setItem(DAILY_KEY,'0');
+  if(persist !== false) localStorage.setItem(DAILY_KEY,'0');
   try{ refreshNav(); }catch(e){}   // 同步左侧导航高亮
 }
 function dailyOpen(){
@@ -3215,68 +3243,120 @@ function renderTopFlash(){
     </div>${extra}${note}`;
 }
 
+/* 全站池：只聚合真实抓取条目（flatItems 即首页全部 DATA），
+   不含「示例数据」的平台卡，也不含全站聚合卡（避免与源卡重复计数）；
+   同一标题多源出现时只留热度最高的一条。 */
+function aiHomePool(){
+  const seen = new Map();
+  flatItems().forEach(x=>{
+    const k = (x.it.t||'').replace(/\s+/g,'');
+    const prev = seen.get(k);
+    if(!prev || (x.it.h||0) > (prev.it.h||0)) seen.set(k, x);
+  });
+  const list = [...seen.values()];
+  const G = {day:0, month:1, unknown:2};
+  list.sort((a,b)=>{
+    const ga = G[dateGrade(a.it.d)], gb = G[dateGrade(b.it.d)];
+    if(ga !== gb) return ga - gb;
+    return (b.it.h||0) - (a.it.h||0);
+  });
+  return list;
+}
+const AI_SECTION_ORDER = ['政策 / 监管动态','行业数据 / 报告','竞品 / 厂商动态','行业动态','其他动态'];
+const AI_PER_SECTION = 5;
+
+/* 首页右侧栏 AI 助手：自动总结首页全部抓取数据（模版复用「资讯日报」）
+   —— 分类分节 → 每条附解读 → 一句话小结，全部条目可点标题溯源。 */
 function dailyBuild(){
   const body = document.getElementById('dailyBody');
   const meta = document.getElementById('dailyMeta');
-  // ① 三档日期精度的条目全部纳入（精确到日 / 仅到月份 / 时间待补充）
-  const d = dailyPool();
-  if(!d || !d.pool.length){ body.innerHTML = '<div class="empty">资讯库暂无可展示的资讯条目</div>'; return; }
-  const {latest, pool} = d;
-  const g = d.grades || {day:0, month:0, unknown:0};
-  document.getElementById('dailyDate').textContent = latest || '日期待补充';
-  // 抓取日与稿件日期分开写：日报按稿件日期生成，并如实披露日期不精确条目数
-  if(meta) meta.textContent = `抓取 ${d.fetchDay||'—'} · 稿件截至 ${latest||'待补充'} · 共 ${pool.length} 条（含 ${g.month+g.unknown} 条日期不精确）`;
+  if(!body) return;
+  const pool = aiHomePool();
+  if(!pool.length){ body.innerHTML = '<div class="empty">资讯库暂无可展示的资讯条目</div>'; return; }
 
-  // ③ 按分类分节（TOP3 速览已移至卡片区顶部横幅）
+  const d = dailyPool();                    // 复用日期口径：抓取日 / 稿件日 / 精度分档
+  const g = d.grades || {day:0, month:0, unknown:0};
+  const dd = document.getElementById('dailyDate');
+  if(dd) dd.textContent = d.latest ? d.latest.slice(5) : '日期待补充';
+
+  const now = new Date();
+  const hhmm = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  if(meta) meta.textContent = `${pool.length} 条 · 抓取 ${(d.fetchDay||'').slice(5) || '—'} · 稿件 ${d.latest ? d.latest.slice(5) : '待补充'} · 更新 ${hhmm}`;
+
+  // 按分类分节
   const groups = {};
   pool.forEach(x=>{ const k = _dailySectionTitle(x.it.cat || x.card.cat); (groups[k]=groups[k]||[]).push(x); });
-  let secNo = 1;
+  const titles = AI_SECTION_ORDER.filter(t=>groups[t])
+    .concat(Object.keys(groups).filter(t=>!AI_SECTION_ORDER.includes(t)));
+
   const itemHtml = x => {
-    const src = x.card.name;
-    const u = x.it.u && x.it.u!=='#';
+    const u = x.it.u && x.it.u!=='#' && x.it.u!=='待补充';
     return `<div style="padding:7px 0;border-bottom:1px dashed var(--line)">
       <div style="font-size:12.5px;line-height:1.6">${u?`<a href="${x.it.u}" target="_blank" rel="noopener" style="color:var(--tx);text-decoration:none">${escapeHtml(x.it.t)}</a>`:escapeHtml(x.it.t)}</div>
-      <div style="font-size:11px;color:var(--tx-dim2);margin:3px 0" title="${escapeHtml(dateTitle(x.it.d))}">（${escapeHtml(dateLabel(x.it.d))}，${escapeHtml(src)}）</div>
+      <div style="font-size:11px;color:var(--tx-dim2);margin:3px 0" title="${escapeHtml(dateTitle(x.it.d))}">（${escapeHtml(dateLabel(x.it.d))}，${escapeHtml(x.card.name)}）</div>
       ${x.it.summary && x.it.summary!==x.it.t ? `<div style="font-size:11.5px;color:var(--tx-dim);line-height:1.6">${escapeHtml(x.it.summary)}</div>`:''}
       <div style="font-size:11.5px;color:var(--accent);margin-top:3px">→ 解读：${escapeHtml(_dailyInsight(x))}</div>
     </div>`;
   };
-  const htmlSecs = Object.entries(groups).map(([title, xs])=>{
-    // 每个分类分节至多展示 5 条
+
+  let secNo = 1;
+  const secs = titles.map(title=>{
+    const xs = groups[title];
+    const rest = xs.length - AI_PER_SECTION;
+    const more = rest > 0
+      ? `<div class="ai-more">另有 ${rest} 条未展开 · 可在左侧对应卡片点「查看全部」</div>` : '';
     return `<div class="seg">
-      <h5><i>${secNo++}</i>${escapeHtml(title)}</h5>
-      ${xs.slice(0,5).map(itemHtml).join('')}
+      <h5><i>${secNo++}</i>${escapeHtml(title)}<em class="seg-n">${xs.length} 条</em></h5>
+      ${xs.slice(0, AI_PER_SECTION).map(itemHtml).join('')}
+      ${more}
     </div>`;
   }).join('');
-  // 日期不精确条目单独成节：进了候选池也必须真的看得见，否则等于没纳入
-  const fuzzyItems = pool.filter(x=>dateGrade(x.it.d)!=='day');
-  const fuzzySec = fuzzyItems.length ? `<div class="seg">
-    <h5><i>${secNo++}</i>日期精度待补充 · 已纳入 ${fuzzyItems.length} 条</h5>
-    <p style="font-size:11px;line-height:1.6;color:var(--tx-dim2);margin:0 0 4px">原文未提供可解析的完整发布日期，按「N 月」或「时间待补充」如实标注，未推测具体日期；均保留原文链接可溯源。</p>
-    ${fuzzyItems.slice(0,5).map(itemHtml).join('')}
-  </div>` : '';
 
-  // ⑤ 一句话小结
-  const cats = Object.keys(groups);
-  const brands = [...new Set(pool.map(x=>x.it.brand).filter(Boolean))].slice(0,4);
-  const summary = `今日主线是「${cats.slice(0,2).join(' + ') || '综合资讯'}」——共收录 ${pool.length} 条资讯${brands.length? '，涉及 ' + brands.join('、') : ''}，热度最高的是「${pool[0].it.t.slice(0,30)}${pool[0].it.t.length>30?'…':''}」。以上内容均来自真实抓取，可点击标题溯源原文。`;
-  body.innerHTML = htmlSecs + fuzzySec + `
+  // 一句话小结（全部由真实数据计算，不编造）
+  const brands = [...new Set(pool.map(x=>x.it.brand).filter(Boolean))];
+  const dist = titles.map(t=>`${t.split(' / ')[0]} ${groups[t].length} 条`).join('、');
+  const hottest = pool.slice().sort((a,b)=>(b.it.h||0)-(a.it.h||0))[0];
+  const fuzzy = g.month + g.unknown;
+  const summary = `本次自动总结覆盖 ${pool.length} 条真实资讯，分布为 ${dist}。`
+    + (brands.length ? `涉及品牌 ${brands.slice(0,6).join('、')}${brands.length>6?' 等':''}。` : '')
+    + (hottest ? `全站热度最高的是「${hottest.it.t.slice(0,32)}${hottest.it.t.length>32?'…':''}」。` : '')
+    + (fuzzy ? `其中 ${fuzzy} 条原文日期不精确，已如实标注「N 月」或「时间待补充」，未推测具体日期。` : '')
+    + '所有条目均来自真实抓取，可点标题溯源原文。';
+
+  body.innerHTML = secs + `
     <div class="seg">
       <h5><i>✍️</i>一句话小结</h5>
       <p style="font-size:12px;line-height:1.7;color:var(--tx-dim)">${escapeHtml(summary)}</p>
     </div>`;
+  _AI_SIG = _aiSig();
+}
+
+/* 数据变化后自动重建总结：保证「抓取数据刷新 → AI 总结同步更新」。
+   只在右栏展开时执行，且用签名比对避免无意义的重复渲染。 */
+let _AI_SIG = '';
+function _aiSig(){ let n=0; DATA.forEach(c=>n+=(c.items||[]).length); return DATA.length+':'+n; }
+function aiSummarySync(){
+  const side = document.getElementById('dailySide');
+  if(!side || side.classList.contains('collapsed')) return;
+  if(_AI_SIG !== _aiSig()) dailyBuild();
 }
 document.getElementById('dailyCollapse').onclick = dailyClose;
+document.getElementById('dailyRefresh').onclick = ()=>{
+  dailyBuild();
+  toast('AI 总结已基于当前数据重新生成');
+};
 document.getElementById('dailyCopy').onclick = ()=>{
   const txt = document.getElementById('dailyBody').innerText;
-  if(!txt){ toast('暂无日报可复制'); return; }
-  navigator.clipboard?.writeText(txt).then(()=>toast('日报已复制到剪贴板')).catch(()=>toast('复制失败，请手动选择'));
+  if(!txt){ toast('暂无总结可复制'); return; }
+  navigator.clipboard?.writeText(txt).then(()=>toast('总结已复制到剪贴板')).catch(()=>toast('复制失败，请手动选择'));
 };
-/* 启动：订阅源初始化会重建 DATA，等同步初始化跑完再渲染速览与日报，
-   否则两处会基于不同的 DATA 快照，候选数与「已纳入」条数对不上。 */
+/* 启动：订阅源初始化会重建 DATA，等同步初始化跑完再渲染速览与总结，
+   否则两处会基于不同的 DATA 快照，候选数与「已纳入」条数对不上。
+   首页默认展开右侧 AI 助手（用户手动关闭过则尊重其选择）。 */
 setTimeout(()=>{
   try{ renderTopFlash(); }catch(err){ console.warn('renderTopFlash', err); }
-  if(localStorage.getItem(DAILY_KEY)==='1') dailyOpen();
+  if(activeNav==='home' && localStorage.getItem(DAILY_KEY)!=='0') dailyOpen();
+  else if(localStorage.getItem(DAILY_KEY)==='1') dailyOpen();
 }, 0);
 try{ refreshNav(); }catch(err){}
 
