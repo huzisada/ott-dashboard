@@ -1377,14 +1377,15 @@ function hotSourceName(id){
 /* ============================================================
    竞品动态·平台（前端聚合卡片）
    - 监控 5 个平台竞品：芒果超媒 / 新媒股份 / 银河奇异果 / 极光TV / 云视听小电视
-   - 这些源当前为「待接入」，尚无真实抓取数据，故以下为明确标注的「示例数据」，仅作版式示意
+   - 这些源当前为「待接入」，尚无真实抓取数据；下方条目为版式占位话题（不含日期与来源），
+     待 5 个平台源接入真实抓取后由 pipeline 产出替换
    - 默认展示 4 条，底部「查看全部」展开全部
    ============================================================ */
 const PLATFORM_CARD = {
   id:'plat_monitor', name:'竞品动态 · 平台', cat:'竞品', type:'competitor',
   agg:true, plat:true, sample:true, c:'#3b82f6', s:'平',
   monitors:['芒果超媒','新媒股份','银河奇异果','极光TV','云视听小电视'],
-  time:'示例数据 · 待接入真实抓取',
+  time:'待接入真实抓取',
   items:[
     {t:'芒果超媒 大屏会员与内容分发动向', brand:'芒果超媒', h:9.4, d:'42 分钟前'},
     {t:'新媒股份 IPTV / OTT 业务结构跟踪', brand:'新媒股份', h:8.9, d:'2 小时前'},
@@ -1423,7 +1424,7 @@ function renderPlatCard(c, expanded){
         </li>`).join('')}
     </ol>
     <div class="card-foot">
-      <span class="cf-count">共 ${c.items.length} 条 · 示例数据</span>
+      <span class="cf-count">共 ${c.items.length} 条</span>
       ${tooMany ? `<button class="cf-more rank-toggle${expanded?' open':''}" data-cid="${c.id}">${expanded?'收起':'查看全部'}${moreIcon}</button>` : ''}
     </div>
   </article>`;
