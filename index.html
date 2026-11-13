@@ -187,10 +187,10 @@
 
   .card{
     background:linear-gradient(180deg,var(--panel-a),var(--panel-b));
-    border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 6px;
+    border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 14px;
     transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
     animation:fade .4s ease both;
-    /* 固定高度：榜单区在卡片内部滚动，底部栏始终贴住卡片底边 */
+    /* 固定高度：榜单区在卡片内部滚动，超出部分靠右侧拖动条提示 */
     height:var(--card-h,470px);
     display:flex;flex-direction:column;position:relative
   }
@@ -225,8 +225,8 @@
   .rank-scroll{
     --vis:4;                              /* 首屏露出的完整条数，与 JS 的 CARD_VISIBLE 保持一致 */
     --row-h:79px;                         /* 单条高度（标题最多 2 行 + 元信息） */
-    margin:2px 0 0;padding-right:9px;
-    max-height:calc(var(--row-h) * var(--vis) + 30px);
+    margin:2px 0 0;padding-right:9px;padding-bottom:6px;
+    max-height:calc(var(--row-h) * var(--vis) + 74px);
     overflow-y:auto;overflow-x:hidden;
     overscroll-behavior:contain;
     scrollbar-width:none;                 /* 原生滚动条隐藏，改用自绘拖动条（位置更可控、颜色更明显） */
@@ -1633,9 +1633,8 @@ function render(){
     // 每张卡片：全部条目一次性渲染进固定高度的滚动区，卡片内滚动查看，不再有「查看全部」
     const items = c.items;
     const scrollable = items.length > CARD_VISIBLE;
-    const foot = `<div class="card-foot">
-      <span class="cf-count">共 ${items.length} 条${scrollable?' · 可滚动':''}</span>
-    </div>`;
+    // 底部状态条已去掉：条数在卡片头部 meta 里，卡片可滚由右侧拖动条自行表达
+    const foot = '';
     return `
     <article class="card${c.agg?' hot-card':''}">
       <div class="card-head">
