@@ -158,7 +158,7 @@
   .badge{
     position:absolute;top:-3px;right:-3px;background:var(--red);color:#fff;font-size:10px;
     min-width:16px;height:16px;border-radius:999px;display:grid;place-items:center;
-    padding:0 4px;font-weight:700;border:2px solid var(--bg);line-height:1
+    padding:0 4px;font-weight:700;border:2px solid var(--bg);line-height:1;z-index:5
   }
 
   .content{padding:26px 30px 60px;flex:1}
@@ -337,50 +337,40 @@
   .notif-tab:hover{color:var(--tx-mid)}
   .notif-tab.on{background:var(--accent-soft);border-color:rgba(11,197,160,.4);color:var(--accent)}
   .notif-body{flex:1;overflow-y:auto;padding:0}
-  .notif-list{padding:4px 14px 16px}
+  .notif-list{padding:2px 0 18px}
   .notif-item{
-    display:flex;gap:11px;padding:11px 0;border-top:1px solid rgba(255,255,255,.045)
+    display:flex;gap:12px;align-items:flex-start;
+    padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.06)
   }
-  .notif-item:first-child{border-top:0}
+  .notif-item:last-child{border-bottom:0}
+  .notif-item:hover{background:rgba(255,255,255,.018)}
   .notif-dot{
-    flex-shrink:0;width:9px;height:9px;border-radius:50%;margin-top:7px;
-    background:var(--accent);box-shadow:0 0 8px var(--accent)
+    flex-shrink:0;width:9px;height:9px;border-radius:50%;margin-top:8px;
+    background:#8b8f98;border:1px solid rgba(255,255,255,.18)
   }
-  .notif-dot.read{background:#3a3d44;box-shadow:none}
-  .notif-info{flex:1;min-width:0;font-size:12.5px;color:var(--tx-mid);line-height:1.55}
+  .notif-item.unread .notif-dot{background:var(--accent);border-color:transparent;box-shadow:0 0 8px rgba(11,197,160,.75)}
+  .notif-info{flex:1;min-width:0;font-size:13.5px;color:#e3e4e8;line-height:1.48;font-weight:600}
   .notif-info .lbl{
-    display:inline-block;padding:1px 7px;margin-right:6px;border-radius:6px;
+    display:inline-block;padding:2px 7px;margin-right:8px;border-radius:5px;
     font-size:10.5px;font-weight:600;border:1px solid var(--line);
-    color:var(--tx-dim);background:rgba(255,255,255,.02);vertical-align:1px
+    color:var(--tx-dim);background:rgba(255,255,255,.02);
+    vertical-align:2px;letter-spacing:.2px
   }
-  .notif-info .lbl.cat-policy{color:#f59e0b;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.07)}
-  .notif-info .lbl.cat-vendor{color:#60a5fa;border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.07)}
-  .notif-info .lbl.cat-drama{color:#f472b6;border-color:rgba(244,114,182,.4);background:rgba(244,114,182,.07)}
-  .notif-info .lbl.cat-integrated{color:#a78bfa;border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.07)}
-  .notif-info .lbl.cat-system{color:var(--tx-dim)}
-  .notif-info .ttl{color:#d7d8dc;text-decoration:none;border-bottom:1px dashed transparent}
-  .notif-info .ttl:hover{color:var(--accent);border-bottom-color:var(--accent)}
-  .notif-info .ts{display:block;margin-top:4px;font-size:11px;color:var(--tx-dim2)}
+  .notif-info .lbl.cat-policy{color:#fbbf24;border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.08)}
+  .notif-info .lbl.cat-vendor{color:#60a5fa;border-color:rgba(96,165,250,.5);background:rgba(96,165,250,.08)}
+  .notif-info .lbl.cat-drama{color:#f472b6;border-color:rgba(244,114,182,.5);background:rgba(244,114,182,.08)}
+  .notif-info .lbl.cat-integrated{color:#a78bfa;border-color:rgba(167,139,250,.5);background:rgba(167,139,250,.08)}
+  .notif-info .lbl.cat-system{
+    color:#c4c6cc;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.05)
+  }
+  .notif-info .ttl{color:#e3e4e8;text-decoration:none;transition:color .15s}
+  .notif-info .ttl:hover{color:var(--accent)}
+  .notif-info .ts{display:block;margin-top:7px;font-size:11.5px;color:#5f6167;font-weight:500}
   .notif-empty{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     padding:80px 20px;color:var(--tx-dim2);text-align:center;gap:10px;font-size:13px
   }
   .notif-empty svg{width:36px;height:36px;opacity:.4}
-  .notif-toggle{
-    display:flex;justify-content:center;align-items:center;gap:6px;
-    margin:6px 14px 16px;padding:9px 0;border-radius:9px;
-    background:rgba(255,255,255,.025);border:1px dashed var(--line);
-    color:var(--tx-mid);font-size:12.5px;font-weight:600;cursor:pointer;
-    font-family:inherit;transition:.15s
-  }
-  .notif-toggle:hover{background:rgba(255,255,255,.06);color:#fff;border-color:var(--line-strong)}
-  .notif-toggle svg{width:13px;height:13px;transition:transform .2s}
-  .notif-toggle.open svg{transform:rotate(180deg)}
-  .notif-toggle .cnt{
-    background:var(--accent-soft);color:var(--accent);
-    border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;
-    border:1px solid rgba(11,197,160,.35)
-  }
   @media(max-width:860px){
     .notif-panel{width:100vw;border-left:0}
   }
@@ -1919,7 +1909,11 @@ document.getElementById('btnBell').onclick = ()=>{
   document.body.classList.toggle('notif-open');
   const open = document.body.classList.contains('notif-open');
   document.getElementById('notifPanel').setAttribute('aria-hidden', open?'false':'true');
-  if(open) renderNotif();
+  if(open){
+    renderNotif();            // 先按当前状态渲染，让「未读」tab 能看到新内容
+    notifMarkSeen();          // 打开即视为已读（角标清零，圆点在下次渲染时变灰）
+    syncBellBadge();
+  }
 };
 document.getElementById('notifClose').onclick = ()=>{
   document.body.classList.remove('notif-open');
@@ -1932,8 +1926,8 @@ document.getElementById('notifRefresh').onclick = ()=>{
   // 模拟拉取过程 —— 800ms 后用全新时间戳重新组装通知
   setTimeout(()=>{
     NOTIFS = buildNotifs(true);
-    notifExpanded = false; // 刷新后回到折叠
     renderNotif();
+    syncBellBadge();
     btn.classList.remove('loading'); btn.disabled = false;
     toast('通知已刷新 · 共 ' + NOTIFS.length + ' 条');
   }, 800);
@@ -1943,7 +1937,6 @@ document.querySelectorAll('.notif-tab').forEach(b=>{
     document.querySelectorAll('.notif-tab').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');
     notifFilter = b.dataset.f;
-    notifExpanded = false; // 切 tab 后回到折叠
     renderNotif();
   };
 });
@@ -1979,18 +1972,13 @@ function buildRealNotifs(){
       if(!u || u==='#' || u==='待补充') return; // 无原文链接 → 不进通知，避免无法溯源
       if(seen.has(u)) return;
       seen.add(u);
+      // 注意：_ts 表示「发布日期」（用于未读判断，越新越大）；没有精确日期时置 0，
+      // 避免用 Date.now() 把「仅到月」的旧稿误判成最新内容。
       const g = _notifGrade(it.d);
-      let ts, isNew = false, sub;
-      if(g===0){
-        const dt = new Date(it.d + 'T00:00:00').getTime();
-        const diff = Math.floor((Date.now() - dt)/86400e3);
-        ts = dt; isNew = diff <= 0; sub = diff<=0 ? '今天' : diff + ' 天前';
-      } else if(g===1){
-        ts = Date.now(); sub = Number(it.d.slice(5,7)) + ' 月';
-      } else {
-        ts = Date.now(); sub = '时间待补充';
-      }
-      out.push({ cat:_notifCatOf(card.cat), t:it.t, link:u, d:it.d, src:card.name, _ts:ts, _new:isNew, _sub:sub });
+      let ts = 0;
+      if(g===0) ts = new Date(it.d + 'T00:00:00').getTime();
+      else if(g===1){ const [y,m] = it.d.split('-'); ts = new Date(Number(y), Number(m)-1, 1).getTime(); }
+      out.push({ cat:_notifCatOf(card.cat), t:it.t, link:u, d:it.d, src:card.name, _ts:ts });
     });
   });
   out.sort((a,b)=>{
@@ -2006,7 +1994,7 @@ function buildRealNotifs(){
   order.forEach(c=>{ if(byCat[c]) picked = picked.concat(byCat[c].slice(0, CAP)); });
   const ok = META.source_ok||0, total = META.source_total||0, all = META.total||0;
   const sysSub = META.generated_at ? '抓取于 ' + fmtFetchTime(META.generated_at).replace(/^今日 /,'') : '';
-  const sysHead = { cat:'system', t:`数据已更新 · ${ok}/${total} 个信源正常 · 共 ${all} 条资讯（全部可溯源）`, link:'#', d:'', src:'', _ts:Date.now(), _new:false, _sub:sysSub };
+  const sysHead = { cat:'system', t:`数据已更新 · ${ok}/${total} 个信源正常 · 共 ${all} 条资讯（全部可溯源）`, link:'#', d:'', src:'', _ts:notifFetchTs(), _new:false, _sub:sysSub };
   return [sysHead, ...picked];
 }
 function buildNotifs(refresh){
@@ -2018,56 +2006,79 @@ function buildNotifs(refresh){
 }
 let NOTIFS = [];   // 在 META 就绪后（下方）由 buildNotifs 填充，避免 TDZ
 let notifFilter = 'all';
-let notifExpanded = false;
-const NOTIF_PAGE_LIMIT = 10; // 默认最多展示 10 条
 
-function fmtAgo(ts){
-  const diff = Math.max(1, Math.floor((Date.now() - ts)/1000));
-  if(diff<60) return diff+' 秒前';
-  if(diff<3600) return Math.floor(diff/60)+' 分钟前';
-  if(diff<86400) return Math.floor(diff/3600)+' 小时前';
-  return Math.floor(diff/86400)+' 天前';
+/* 未读状态：记录「已读时间断点」。
+   抓取时间晚于断点的条目 = 新内容 → 未读（青绿圆点 + 铃铛角标计数）。
+   点开面板时把断点推到最新抓取时间，之后再抓取进来的内容自然又变成未读。 */
+const NOTIF_SEEN_KEY = 'ott_notif_seen_at';
+function notifSeenAt(){
+  const n = Number(localStorage.getItem(NOTIF_SEEN_KEY) || 0);
+  return isFinite(n) ? n : 0;
+}
+function notifFetchTs(){
+  const d = parseStamp(META.generated_at);
+  return d ? d.getTime() : 0;
+}
+function notifMarkSeen(){
+  try{ localStorage.setItem(NOTIF_SEEN_KEY, String(Math.max(Date.now(), notifFetchTs()))); }catch(e){}
+}
+function notifUnreadCount(){
+  if(!NOTIFS.length) return 0;
+  const seen = notifSeenAt();
+  return NOTIFS.filter(n => n.cat !== 'system' && n._ts > seen).length;
+}
+function syncBellBadge(){
+  const b = document.querySelector('#btnBell .badge');
+  if(!b) return;
+  const unread = notifUnreadCount();
+  b.textContent = unread > 99 ? '99+' : String(unread);
+  b.style.display = unread ? '' : 'none';
+  document.getElementById('btnBell').title = unread ? `通知 · ${unread} 条未读` : '通知';
+}
+/* 把「绝对日期」转成人话：今天 / 昨天 / N 天前 / MM-DD */
+function notifAgoLabel(d){
+  if(!d) return '';
+  const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return String(d).replace('（月精度）','');
+  const t = new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`).getTime();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((today.getTime() - t) / 86400e3);
+  if(diff <= 0) return '今天';
+  if(diff === 1) return '昨天';
+  return diff + ' 天前';
 }
 function renderNotif(){
   const body = document.getElementById('notifBody');
   document.getElementById('notifCnt').textContent = '· ' + NOTIFS.length + ' 条';
-  let list = NOTIFS.slice();
-  if(notifFilter==='unread')  list = list.filter(n=>n._new);
+  const seen = notifSeenAt();
+  // 未读 = 发布日期晚于上次已读断点（系统消息不算未读）
+  let list = NOTIFS.map(n=>({...n, _unread: n.cat !== 'system' && n._ts > seen}));
+  if(notifFilter==='unread')  list = list.filter(n=>n._unread);
   else if(notifFilter==='policy') list = list.filter(n=>n.cat==='policy');
   else if(notifFilter==='vendor') list = list.filter(n=>n.cat==='vendor');
   if(!list.length){
-    body.innerHTML = '<div class="notif-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><div>暂无通知</div></div>';
+    const tip = notifFilter==='unread' ? '暂无未读通知' : '暂无通知';
+    body.innerHTML = `<div class="notif-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><div>${tip}</div></div>`;
     return;
   }
-  // —— 折叠逻辑：超过 NOTIF_PAGE_LIMIT 条时默认收起，点按钮后展开 ——
-  const total = list.length;
-  const collapse = total > NOTIF_PAGE_LIMIT && !notifExpanded;
-  const visible = collapse ? list.slice(0, NOTIF_PAGE_LIMIT) : list;
-  const itemsHtml = visible.map(n=>`
-    <div class="notif-item">
-      <span class="notif-dot ${n._new?'':'read'}"></span>
+  // 参考版式：不再折叠，整体滚动
+  const itemsHtml = list.map(n=>{
+    const sub = n.cat==='system'
+      ? escapeHtml(n._sub || '')
+      : [n.src, notifAgoLabel(n.d)].filter(Boolean).join(' · ');
+    const title = n.link && n.link!=='#'
+      ? `<a class="ttl" href="${n.link}" target="_blank" rel="noopener">${escapeHtml(n.t)}</a>`
+      : `<span class="ttl">${escapeHtml(n.t)}</span>`;
+    return `
+    <div class="notif-item ${n._unread?'unread':''}">
+      <span class="notif-dot"></span>
       <div class="notif-info">
-        <span class="lbl cat-${n.cat}">${NOTIF_CAT_LBL[n.cat]||'其他'}</span>
-        ${n.link && n.link!=='#' ? `<a class="ttl" href="${n.link}" target="_blank" rel="noopener">${escapeHtml(n.t)}</a>` : `<span class="ttl">${escapeHtml(n.t)}</span>`}
-        <span class="ts">${escapeHtml(n.src||'')}${(n.src&&n._sub)?' · ':''}${escapeHtml(n._sub||'')}</span>
+        <span class="lbl cat-${n.cat}">${NOTIF_CAT_LBL[n.cat]||'其他'}</span>${title}
+        ${sub ? `<span class="ts">${sub}</span>` : ''}
       </div>
-    </div>`).join('');
-  let toggleHtml = '';
-  if(total > NOTIF_PAGE_LIMIT){
-    toggleHtml = `<button class="notif-toggle ${notifExpanded?'open':''}" id="notifToggle">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-      ${notifExpanded ? '收起' : '展开更多'}
-      <span class="cnt">+${total - NOTIF_PAGE_LIMIT}</span>
-    </button>`;
-  }
-  body.innerHTML = '<div class="notif-list">' + itemsHtml + '</div>' + toggleHtml;
-  const tg = document.getElementById('notifToggle');
-  if(tg){
-    tg.onclick = ()=>{
-      notifExpanded = !notifExpanded;
-      renderNotif();
-    };
-  }
+    </div>`;
+  }).join('');
+  body.innerHTML = '<div class="notif-list">' + itemsHtml + '</div>';
 }
 document.getElementById('btnSources').onclick = openModal;
 /* 导出竞品动态：汇总竞品 + 厂商动态的真实条目（标题 / 摘要 / 原文链接），复制为 Markdown
@@ -2833,7 +2844,30 @@ const META = RAW.meta || {};
 const REFRESH_MS = 20*60*1000;
 /* 通知在 META 就绪后再派生（buildNotifs 依赖 META，避免 TDZ），并同步铃铛角标 */
 NOTIFS = buildNotifs(false);
-try{ const _b=document.querySelector('#btnBell .badge'); if(_b) _b.textContent=NOTIFS.length; }catch(_){}
+/* 首次访问：把当前抓取视为「已读基线」——首屏不刷一屏未读，之后的新抓取才算未读。
+   先同步抢占基线再渲染，避免页面跳转时的竞态。 */
+/* 仅当基线缺失时才写（写''也视为已有基线），避免二次访问把已读状态重置 */
+if(localStorage.getItem(NOTIF_SEEN_KEY) === null) notifMarkSeen();
+try{ syncBellBadge(); }catch(_){}
+/* 有新抓取时：先点亮铃铛角标（刷新页面会自动 reload，这里只补上过渡期的那一下） */
+function flagNewContent(){
+  const b = document.querySelector('#btnBell .badge');
+  if(b){ b.textContent = '新'; b.style.display = ''; }
+  if(!document.title.startsWith('（有新内容）')) document.title = '（有新内容）' + document.title;
+}
+/* 每 20 分钟核对站点是否已发布新数据（静默，不打扰阅读；到点自然 reload 载入新内容） */
+setInterval(()=>{
+  if(document.hidden) return;
+  fetch('data.js?t=' + Date.now(), {cache:'no-store'})
+    .then(r => r.ok ? r.text() : Promise.reject(new Error('HTTP '+r.status)))
+    .then(txt=>{
+      const m = txt.match(/window\.__OTT_DATA__\s*=\s*([\s\S]*);\s*$/);
+      if(!m) return;
+      const stamp = (JSON.parse(m[1]).meta||{}).generated_at || '';
+      if(stamp && stamp !== _buildAtLoad) flagNewContent();
+    })
+    .catch(()=>{});
+}, REFRESH_MS);
 
 function parseStamp(iso){
   if(!iso) return null;
@@ -2902,7 +2936,8 @@ setInterval(()=>{ autoReload(); }, REFRESH_MS);
 
 /* 真正重新拉取 data.js（绕过缓存），有新数据就重绘并提示 */
 const _buildAtLoad = META.generated_at || '';
-async function autoReload(){
+async function refreshDataIfNewer(opts={}){
+  const silent = !!opts.silent;
   try{
     const r = await fetch('data.js?t=' + Date.now(), {cache:'no-store'});
     if(!r.ok) throw new Error('HTTP '+r.status);
@@ -2913,14 +2948,17 @@ async function autoReload(){
     const stamp = (fresh.meta||{}).generated_at || '';
     if(stamp && stamp !== _buildAtLoad){
       toast(`数据已更新：${(fresh.meta||{}).total||0} 条（抓取于 ${fmtFetchTime(stamp)}）`);
-      setTimeout(()=>location.reload(), 800);
-    }else{
-      toast('已检查更新：暂无新数据');
+      setTimeout(()=>location.reload(), silent ? 1500 : 800);
+      return true;
     }
+    if(!silent) toast('已检查更新：暂无新数据');
+    return false;
   }catch(e){
-    toast('检查更新失败：' + e.message);
+    if(!silent) toast('检查更新失败：' + e.message);
+    return false;
   }
 }
+function autoReload(){ return refreshDataIfNewer({silent:false}); }
 
 /* ============================================================
    手动刷新：重新拉取后端数据 + 通知 + 重置倒计时
@@ -2945,7 +2983,7 @@ async function doRefresh(){
     const stamp = (fresh.meta||{}).generated_at || '';
     // 3) 重新读取 data.js 后刷新通知（注意：这是读取静态数据文件，不是发起抓取）
     NOTIFS = buildNotifs(true);
-    notifExpanded = false;
+    syncBellBadge();
     if(document.body.classList.contains('notif-open')) renderNotif();
     try{ aiSummarySync(); }catch(e){}   // 数据刷新 → 右栏 AI 总结同步更新
     const wait = Math.max(0, 600 - (Date.now()-t0));
