@@ -931,6 +931,23 @@
   }
   .tf-item:hover .tf-tt{color:var(--accent)}
   .tf-mt{display:block;font-size:10.5px;color:var(--tx-dim2);margin-top:2px}
+  /* 主区顶部速览：右栏收起或窄屏时由它接管，避免「速览随右栏一起消失」；
+     宽屏且右栏展开时让位给右栏，不做重复。内容由 renderTopFlash() 同步渲染。 */
+  .topflash-m{display:none;margin:0 0 14px}
+  .grid-wrap:has(#dailySide.collapsed) .topflash-m{display:block}
+  .topflash-m .tf-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 18px}
+  .topflash-m .tf-item{border-top:none;border-left:1px solid var(--line);padding:2px 0 2px 14px}
+  .topflash-m .tf-item:first-child{border-left:none;padding-left:0}
+  .topflash-m .tf-tt{-webkit-line-clamp:2}
+  @media(max-width:1180px){
+    .topflash-m{display:block}
+    #dailySide #topFlash{display:none}   /* 窄屏只留主区那一条，不重复 */
+  }
+  @media(max-width:700px){
+    .topflash-m .tf-list{grid-template-columns:1fr;gap:0}
+    .topflash-m .tf-item{border-left:none;padding-left:0;border-top:1px dashed var(--line);padding-top:7px}
+    .topflash-m .tf-item:first-child{border-top:none;padding-top:0}
+  }
   .grid-wrap:has(#aiSide.collapsed):has(#dailySide.collapsed){grid-template-columns:1fr}
   @media(max-width:1180px){.grid-wrap{grid-template-columns:1fr}}
   .ai-side{
@@ -1068,7 +1085,9 @@
   @media(max-width:860px){
     :root{--sidebar-w:0px}
     .sidebar{display:none}
-    .ai-tab{left:0}
+    /* 窄屏把竖排唤起飞标挪到右下角：原先贴左中部会压住正文首屏（速览/卡片标题） */
+    .ai-tab{left:auto;right:0;top:auto;bottom:16px;transform:none;
+      border-radius:12px 0 0 12px;border-left:1px solid var(--line);border-right:none}
     body:not(.ai-open) .ai-tab{display:flex}
     .ai-panel{left:0;width:100vw}
     :root{--ai-list-w:132px}
@@ -1201,6 +1220,8 @@
       <!-- Grid + Search Summary -->
       <div class="grid-wrap">
         <div class="lcol">
+          <!-- 速览：右栏收起 / 窄屏时在此常显（宽屏展开右栏时由右栏那份显示） -->
+          <div class="topflash topflash-m" id="topFlashM" hidden></div>
           <section class="grid" id="grid"></section>
         </div>
         <div class="rcol">
@@ -3687,18 +3708,27 @@ function dailyPool(){
   return {latest, pool, scope:latest, fetchDay: bjFetchDay(META.generated_at), grades};
 }
 
+/* 速览的两个宿主（#topFlash 右栏顶部 / #topFlashM 主区顶部）写同一份 HTML，
+   谁能看见由 CSS 决定：宽屏且右栏展开 → 右栏那份；右栏收起或窄屏 → 主区那份。 */
+function paintTopFlash(html){
+  ['topFlash','topFlashM'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(!html){ el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = html;
+  });
+}
+
 /* 今日重点速览（TOP3）· 右栏 AI 总结顶部的紧凑条
    口径：抓取日（META.generated_at，北京）与文章发布日期（it.d）分开标注。
    当日没有新稿时如实说明，绝不把旧稿包装成「今日」，也不编造当日条目。 */
 function renderTopFlash(){
-  const box = document.getElementById('topFlash');
-  if(!box) return;
   // LLM 总结（DeepSeek）给出的重点优先：带一句话理由，链接仍指向原文
   const S = llmSummary();
   if(S && S.highlights && S.highlights.length){
     const t = (S.generated_at||'').slice(5,16).replace('T',' ');
-    box.hidden = false;
-    box.innerHTML = `
+    paintTopFlash(`
       <div class="tf-head">
         <span class="tf-fire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span>
         <b>今日重点速览</b>
@@ -3714,17 +3744,16 @@ function renderTopFlash(){
               <span class="tf-mt" title="${escapeHtml(dateTitle(x.d))}">${escapeHtml(x.why || (dateLabel(x.d)+' · '+x.src))}</span>
             </span>
           </a>`).join('')}
-      </div>`;
+      </div>`);
     return;
   }
   const d = dailyPool();
-  if(!d || !d.pool.length){ box.hidden = true; box.innerHTML = ''; return; }
+  if(!d || !d.pool.length){ paintTopFlash(''); return; }
   const top3 = d.pool.slice(0,3);
   const fDay = d.fetchDay ? d.fetchDay.slice(5) : '—';
   const latestTxt = d.latest ? d.latest.slice(5) : '待补充';
   const scopeTxt = `抓取 ${fDay} · 最新稿件 ${latestTxt} · 候选 ${d.pool.length} 条`;
-  box.hidden = false;
-  box.innerHTML = `
+  paintTopFlash(`
     <div class="tf-head">
       <span class="tf-fire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span>
       <b>今日重点速览</b>
@@ -3740,7 +3769,7 @@ function renderTopFlash(){
             <span class="tf-mt" title="${escapeHtml(dateTitle(x.it.d))}">${escapeHtml(dateLabel(x.it.d))} · ${escapeHtml(x.card.name)}${x.it.h ? ' · 热度 '+x.it.h : ''}</span>
           </span>
         </a>`).join('')}
-    </div>`;
+    </div>`);
 }
 
 /*    全站池：只聚合真实抓取条目（flatItems 即首页全部 DATA），
