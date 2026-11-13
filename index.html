@@ -246,18 +246,22 @@
   /* 滚动条：WebKit 常显细条（拖动条）。Chromium 新版默认浮层滚动条会自动隐藏，
      用 ::-webkit-scrollbar 显式声明后改为占位常显样式。 */
   .rank-scroll::-webkit-scrollbar{width:0;height:0}
-  /* 自绘拖动条：轨道 + 可拖动滑块 */
+  /* 自绘拖动条：极细滑块、无轨道底色（对齐参考版式的低调细条），仅 hover 时微微加粗提亮。
+     top/height 由 JS 按滚动区实际位置对齐，保证细条与内容区等高。 */
   .rs-track{
-    position:absolute;top:8px;right:10px;bottom:48px;width:8px;border-radius:99px;
-    background:rgba(255,255,255,.10);opacity:0;transition:opacity .18s;z-index:2;
+    position:absolute;top:12px;right:7px;width:8px;
+    background:transparent;opacity:0;transition:opacity .2s;z-index:2;
   }
   .card.rs-scrollable .rs-track{opacity:1}
-  .card:hover .rs-track{background:rgba(255,255,255,.16)}
   .rs-thumb{
-    position:absolute;left:0;right:0;top:0;border-radius:99px;
-    background:rgba(255,255,255,.46);transition:background .15s;cursor:grab;
+    position:absolute;left:2px;width:4px;top:0;border-radius:99px;
+    background:rgba(255,255,255,.26);
+    transition:background .16s,width .16s,left .16s;cursor:grab;
   }
-  .rs-track:hover .rs-thumb,.rs-track.dragging .rs-thumb{background:var(--accent)}
+  .card:hover .rs-thumb{background:rgba(255,255,255,.30)}
+  .rs-track:hover .rs-thumb,.rs-track.dragging .rs-thumb{
+    background:rgba(255,255,255,.46);width:6px;left:1px;
+  }
   .rs-track.dragging .rs-thumb{cursor:grabbing}
   .rank-scroll .rank-list{margin:12px 0 0}
   .rank{font-size:13px;font-weight:700;color:var(--tx-dim2);font-variant-numeric:tabular-nums;line-height:1.55}
@@ -1740,6 +1744,9 @@ function syncRankScroll(){
     const track = card && card.querySelector('.rs-track');
     if(!track) return;
     const thumb = track.querySelector('.rs-thumb');
+    // 细条与内容区严格等高同起点（offsetTop 相对 .card），避免长过内容或短一截
+    track.style.top = (box.offsetTop + 2) + 'px';
+    track.style.height = Math.max(40, box.clientHeight - 4) + 'px';
     const h = track.clientHeight;
     const ratio = box.clientHeight / box.scrollHeight;
     const th = Math.max(34, Math.round(h * ratio));
