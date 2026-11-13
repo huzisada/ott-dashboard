@@ -945,8 +945,6 @@
     padding:1px 7px;border-radius:6px}
   .plat-brand{font-size:11.5px;color:var(--tx-dim)}
   .plat-time{font-size:11px;color:var(--tx-dim2)}
-  .plat-diff{display:inline-block;margin-top:7px;font-size:11px;color:#e0b341;
-    border:1px dashed rgba(224,179,65,.45);border-radius:7px;padding:2px 8px}
   .plat-heat{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;min-width:34px}
   .plat-heat b{font-size:19px;font-weight:800;color:var(--flame,#ff5c5c);font-variant-numeric:tabular-nums;line-height:1}
   .plat-heat span{font-size:10px;color:var(--tx-dim2);margin-top:3px}
@@ -1397,7 +1395,7 @@ function hotSourceName(id){
    竞品动态·平台（前端聚合卡片）
    - 监控 5 个平台竞品：芒果超媒 / 新媒股份 / 银河奇异果 / 极光TV / 云视听小电视
    - 这些源当前为「待接入」，尚无真实抓取数据，故以下为明确标注的「示例数据」，仅作版式示意
-   - 默认展示 4 条，底部「查看全部」展开全部；与我方差异统一标注「待补充」
+   - 默认展示 4 条，底部「查看全部」展开全部
    ============================================================ */
 const PLATFORM_CARD = {
   id:'plat_monitor', name:'竞品动态 · 平台', cat:'竞品', type:'competitor',
@@ -1405,12 +1403,12 @@ const PLATFORM_CARD = {
   monitors:['芒果超媒','新媒股份','银河奇异果','极光TV','云视听小电视'],
   time:'示例数据 · 待接入真实抓取',
   items:[
-    {t:'芒果超媒 大屏会员与内容分发动向', brand:'芒果超媒', h:9.4, d:'42 分钟前', diff:'待补充'},
-    {t:'新媒股份 IPTV / OTT 业务结构跟踪', brand:'新媒股份', h:8.9, d:'2 小时前', diff:'待补充'},
-    {t:'银河奇异果 · 极光TV 产品迭代观察', brand:'银河奇异果', h:8.5, d:'4 小时前', diff:'待补充'},
-    {t:'云视听小电视 大屏端合作动向', brand:'云视听小电视', h:8.0, d:'6 小时前', diff:'待补充'},
-    {t:'芒果超媒 综艺内容招商与会员联动', brand:'芒果超媒', h:7.6, d:'1 天前', diff:'待补充'},
-    {t:'极光TV 大屏广告与开机资源调整', brand:'极光TV', h:7.1, d:'1 天前', diff:'待补充'}
+    {t:'芒果超媒 大屏会员与内容分发动向', brand:'芒果超媒', h:9.4, d:'42 分钟前'},
+    {t:'新媒股份 IPTV / OTT 业务结构跟踪', brand:'新媒股份', h:8.9, d:'2 小时前'},
+    {t:'银河奇异果 · 极光TV 产品迭代观察', brand:'银河奇异果', h:8.5, d:'4 小时前'},
+    {t:'云视听小电视 大屏端合作动向', brand:'云视听小电视', h:8.0, d:'6 小时前'},
+    {t:'芒果超媒 综艺内容招商与会员联动', brand:'芒果超媒', h:7.6, d:'1 天前'},
+    {t:'极光TV 大屏广告与开机资源调整', brand:'极光TV', h:7.1, d:'1 天前'}
   ]
 };
 function renderPlatCard(c, expanded){
@@ -1438,7 +1436,6 @@ function renderPlatCard(c, expanded){
               <span class="plat-brand">${escapeHtml(it.brand)}</span>
               <span class="plat-time">🕘 ${escapeHtml(it.d)}</span>
             </div>
-            <div class="plat-diff">与我方差异 · ${escapeHtml(it.diff||'待补充')}</div>
           </div>
           <div class="plat-heat"><b>${Number(it.h).toFixed(1)}</b><span>热度</span></div>
         </div>`).join('')}
