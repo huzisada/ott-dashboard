@@ -709,59 +709,42 @@
 
   /* ============ 两栏布局：搜索结果(左) + AI 总结(右) ============ */
   .grid-wrap{display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:flex-start}
-  .lcol{min-width:0;container-type:inline-size}
+  .lcol{min-width:0}
 
-  /* ============ 今日重点速览（TOP3）· 卡片区顶部横幅 ============ */
+  /* ============ 今日重点速览（TOP3）· 右栏 AI 总结顶部的紧凑竖排条 ============ */
   .topflash{
-    background:linear-gradient(180deg,var(--panel-a),var(--panel-b));
     border:1px solid var(--line);border-left:3px solid var(--accent);
-    border-radius:var(--radius);
-    padding:12px 14px;margin-bottom:18px;
-    display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;
+    border-radius:10px;background:rgba(255,255,255,.02);
+    padding:10px 11px;margin:2px 0 6px;
     animation:fade .25s ease both;
   }
   .topflash[hidden]{display:none}
-  .tf-head{display:flex;align-items:center;gap:8px;padding-right:14px;border-right:1px dashed var(--line)}
+  .tf-head{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin-bottom:7px}
   .tf-head .tf-fire{display:flex;align-items:center;color:var(--accent)}
-  .tf-head .tf-fire svg{width:17px;height:17px}
-  .tf-head b{display:block;font-size:12.5px;font-weight:600;letter-spacing:.3px;white-space:nowrap}
-  .tf-head em{display:block;font-size:10.5px;font-style:normal;color:var(--tx-dim2);margin-top:2px;white-space:nowrap}
-  .tf-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
-  .tf-item{display:flex;gap:9px;padding:2px 14px;text-decoration:none;border-left:1px dashed var(--line);min-width:0}
-  .tf-item:first-child{border-left:none;padding-left:2px}
+  .tf-head .tf-fire svg{width:14px;height:14px}
+  .tf-head b{font-size:12px;font-weight:600;letter-spacing:.3px;white-space:nowrap}
+  .tf-top{font-size:10px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);
+    border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-radius:4px;padding:0 5px;line-height:15px}
+  .tf-head em{flex:1 0 100%;font-size:10px;font-style:normal;color:var(--tx-dim2);line-height:1.5}
+  .tf-list{display:flex;flex-direction:column;gap:0}
+  .tf-item{display:flex;gap:8px;padding:7px 0;text-decoration:none;border-top:1px dashed var(--line);min-width:0}
+  .tf-item:first-child{border-top:none;padding-top:0}
   .tf-no{
-    flex:0 0 auto;width:18px;height:18px;border-radius:5px;
+    flex:0 0 auto;width:17px;height:17px;border-radius:5px;
     display:flex;align-items:center;justify-content:center;
-    font-size:11px;font-weight:700;color:var(--accent);
+    font-size:10.5px;font-weight:700;color:var(--accent);
     background:color-mix(in srgb,var(--accent) 20%,transparent);
     border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);
     margin-top:1px;
   }
   .tf-tx{min-width:0}
   .tf-tt{
-    font-size:12px;line-height:1.5;color:var(--tx);
+    font-size:12px;line-height:1.55;color:var(--tx);
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
     transition:color .15s;
   }
   .tf-item:hover .tf-tt{color:var(--accent)}
-  .tf-mt{display:block;font-size:10.5px;color:var(--tx-dim2);margin-top:3px}
-  /* 右侧 AI 助手占走 360px 后，左侧主区可能只剩 600px 左右，
-     三列 TOP3 会被挤成每列 100px、标题一行只放得下几个字 —— 按容器实际宽度改为竖排。 */
-  @container (max-width:760px){
-    .topflash{grid-template-columns:1fr;gap:10px}
-    .tf-head{border-right:none;border-bottom:1px dashed var(--line);padding:0 0 8px}
-    .tf-head em,.tf-head b{white-space:normal}
-    .tf-list{grid-template-columns:1fr}
-    .tf-item{border-left:none;border-top:1px dashed var(--line);padding:8px 0}
-    .tf-item:first-child{border-top:none;padding-top:0}
-  }
-  @media(max-width:1180px){
-    .topflash{grid-template-columns:1fr;gap:10px}
-    .tf-head{border-right:none;border-bottom:1px dashed var(--line);padding:0 0 8px}
-    .tf-list{grid-template-columns:1fr}
-    .tf-item{border-left:none;border-top:1px dashed var(--line);padding:8px 0}
-    .tf-item:first-child{border-top:none;padding-top:0}
-  }
+  .tf-mt{display:block;font-size:10.5px;color:var(--tx-dim2);margin-top:2px}
   .grid-wrap:has(#aiSide.collapsed):has(#dailySide.collapsed){grid-template-columns:1fr}
   @media(max-width:1180px){.grid-wrap{grid-template-columns:1fr}}
   .ai-side{
@@ -1025,8 +1008,6 @@
       <!-- Grid + Search Summary -->
       <div class="grid-wrap">
         <div class="lcol">
-          <!-- 今日重点速览（TOP3）：置于卡片区顶部 -->
-          <div class="topflash" id="topFlash"></div>
           <section class="grid" id="grid"></section>
         </div>
         <div class="rcol">
@@ -1099,6 +1080,8 @@
             </div>
           </div>
           <div class="side-meta"><span class="side-ai-ic">AI</span><span id="dailyMeta">基于最新抓取数据自动生成</span></div>
+          <!-- 今日重点速览（TOP3）：置于 AI 总结正文之上 -->
+          <div class="topflash" id="topFlash"></div>
           <div id="dailyBody"><div class="empty" style="padding:14px 4px">总结生成中…</div></div>
         </aside>
         </div>
@@ -3137,7 +3120,7 @@ function dailyPool(){
   return {latest, pool, scope:latest, fetchDay: bjFetchDay(META.generated_at), grades};
 }
 
-/* 今日重点速览（TOP3）· 卡片区顶部横幅
+/* 今日重点速览（TOP3）· 右栏 AI 总结顶部的紧凑条
    口径：抓取日（META.generated_at，北京）与文章发布日期（it.d）分开标注。
    当日没有新稿时如实说明，绝不把旧稿包装成「今日」，也不编造当日条目。 */
 function renderTopFlash(){
@@ -3153,7 +3136,9 @@ function renderTopFlash(){
   box.innerHTML = `
     <div class="tf-head">
       <span class="tf-fire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span>
-      <div><b>今日重点速览</b><em>TOP ${top3.length} · ${escapeHtml(scopeTxt)}</em></div>
+      <b>今日重点速览</b>
+      <span class="tf-top">TOP ${top3.length}</span>
+      <em title="${escapeHtml(scopeTxt)}">${escapeHtml(scopeTxt)}</em>
     </div>
     <div class="tf-list">
       ${top3.map((x,i)=>`
@@ -3247,6 +3232,7 @@ function dailyBuild(){
     + (fuzzy ? `其中 ${fuzzy} 条原文日期不精确，已如实标注「N 月」或「时间待补充」，未推测具体日期。` : '')
     + '所有条目均来自真实抓取，可点标题溯源原文。';
 
+  try{ renderTopFlash(); }catch(err){ console.warn('renderTopFlash', err); }
   body.innerHTML = secs + `
     <div class="seg">
       <h5><i>✍️</i>一句话小结</h5>
@@ -3263,6 +3249,7 @@ function aiSummarySync(){
   const side = document.getElementById('dailySide');
   if(!side || side.classList.contains('collapsed')) return;
   if(_AI_SIG !== _aiSig()) dailyBuild();
+  try{ renderTopFlash(); }catch(err){ console.warn('renderTopFlash', err); }   // 速览与总结同一数据快照
 }
 document.getElementById('dailyCollapse').onclick = dailyClose;
 document.getElementById('dailyRefresh').onclick = ()=>{
@@ -3278,7 +3265,6 @@ document.getElementById('dailyCopy').onclick = ()=>{
    否则两处会基于不同的 DATA 快照，候选数与「已纳入」条数对不上。
    首页默认展开右侧 AI 助手（用户手动关闭过则尊重其选择）。 */
 setTimeout(()=>{
-  try{ renderTopFlash(); }catch(err){ console.warn('renderTopFlash', err); }
   if(activeNav==='home' && localStorage.getItem(DAILY_KEY)!=='0') dailyOpen();
   else if(localStorage.getItem(DAILY_KEY)==='1') dailyOpen();
 }, 0);
