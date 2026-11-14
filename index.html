@@ -1769,8 +1769,9 @@ function syncRankScroll(){
     track.style.top = (box.offsetTop + 2) + 'px';
     track.style.height = Math.max(40, box.clientHeight - 4) + 'px';
     const h = track.clientHeight;
-    const ratio = box.clientHeight / box.scrollHeight;
-    const th = Math.max(34, Math.round(h * ratio));
+    // 滑块按可视比例算，但封顶 20%：细条保持「短胶囊」观感，不拉成长棍
+    const ratio = Math.min(0.20, box.clientHeight / box.scrollHeight);
+    const th = Math.max(30, Math.round(h * ratio));
     const maxScroll = box.scrollHeight - box.clientHeight;
     const top = maxScroll > 0 ? (box.scrollTop / maxScroll) * (h - th) : 0;
     thumb.style.height = th + 'px';
