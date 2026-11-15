@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """把 processed.json 转成前端可直接消费的 data.js（卡片视图 + 溯源元数据）"""
-import json
+import json, re
 from datetime import datetime
 from pathlib import Path
 
 BASE = Path(__file__).parent
+ROOT = BASE.parent
 SRC = BASE / "data" / "processed.json"
 OUT = BASE / "data" / "data.js"
 
@@ -28,6 +29,21 @@ SRC_COLOR = {
     "工信部·政策文件": "#f59e0b",
     "量子位": "#a855f7",
 }
+
+def prev_snapshot():
+    """上一版已发布的 data.js → (条目总数, 原文)，用于数据骤降守卫。"""
+    p = ROOT / "data.js"
+    if not p.is_file():
+        return 0, ""
+    try:
+        txt = p.read_text(encoding="utf-8")
+        m = re.search(r"=\s*(\{[\s\S]*\})\s*;?\s*$", txt)
+        if not m:
+            return 0, ""
+        return int(json.loads(m.group(1))["meta"]["total"]), txt
+    except Exception:
+        return 0, ""
+
 
 def build():
     d = json.loads(SRC.read_text(encoding="utf-8"))
@@ -146,8 +162,18 @@ def build():
     }
     js = "/* 由 crawl.py + ai_process.py 自动生成，请勿手改 */\nwindow.__OTT_DATA__ = " + \
          json.dumps(payload, ensure_ascii=False) + ";\n"
-    OUT.write_text(js, encoding="utf-8")
     m = payload["meta"]
+    # 数据骤降守卫：某次抓取大面积失败时，宁可沿用上一版完整数据，
+    # 也不能把只剩几个源的残缺结果发布出去（竞品卡片会被整体抹掉）。
+    prev_total, prev_js = prev_snapshot()
+    if prev_total >= 30 and m["total"] < prev_total * 0.6:
+        warn = (f"数据骤降守卫：本次仅 {m['total']} 条，上一版 {prev_total} 条（低于 60%），"
+                f"判定为抓取异常，沿用上一版 data.js 不覆盖")
+        print("::warning::" + warn, flush=True)
+        print("!! " + warn, flush=True)
+        OUT.write_text(prev_js, encoding="utf-8")
+        return payload
+    OUT.write_text(js, encoding="utf-8")
     print(f"data.js 已生成：{m['total']} 条 / {len(card_list)} 张卡片 / {m['source_ok']}/{m['source_total']} 源正常")
     print(f"有日期 {m['with_date']} 条，待补充 {m['pending_date']} 条")
     return payload

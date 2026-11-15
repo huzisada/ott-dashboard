@@ -247,27 +247,36 @@ async def crawl_source(src):
         res["status"] = "blocked"
         res["error"] = "robots.txt 不允许抓取，已跳过"
         return res
-    try:
-        eng = src.get("engine", "static")
-        if eng == "json":
-            items = fetch_avc(src)
-        elif eng == "browser":
-            html = await fetch_browser(src["list_url"])
-            items = collect_links(html, src["list_url"])
-        elif eng == "static" and int(src.get("pages", 1)) > 1:
-            items = crawl_paged_static(src)
-        else:
-            html = http_get(src["list_url"]).decode("utf-8", "ignore")
-            items = collect_links(html, src["list_url"])
-        # 过滤广告与过短标题
-        items = [x for x in items if not is_ad(x["title"])]
-        res["items"] = items[: int(src.get("max_items", 40))]
-        if not items:
-            res["status"] = "empty"
-            res["error"] = "页面可访问但未解析到条目（可能改版，需更新选择器）"
-    except Exception as e:
-        res["status"] = "error"
-        res["error"] = f"{type(e).__name__}: {str(e)[:160]}"
+    # 单源偶发超时 / 被拦返回空页时重试，避免一次抖动就让整站数据塌陷
+    for attempt in range(1, 4):
+        err = ""
+        try:
+            eng = src.get("engine", "static")
+            if eng == "json":
+                items = fetch_avc(src)
+            elif eng == "browser":
+                html = await fetch_browser(src["list_url"])
+                items = collect_links(html, src["list_url"])
+            elif eng == "static" and int(src.get("pages", 1)) > 1:
+                items = crawl_paged_static(src)
+            else:
+                html = http_get(src["list_url"]).decode("utf-8", "ignore")
+                items = collect_links(html, src["list_url"])
+            # 过滤广告与过短标题
+            items = [x for x in items if not is_ad(x["title"])]
+        except Exception as e:
+            items = []
+            err = f"{type(e).__name__}: {str(e)[:160]}"
+        if items:
+            res["items"] = items[: int(src.get("max_items", 40))]
+            res["status"] = "ok"
+            res["error"] = ""
+            return res
+        res["status"] = "error" if err else "empty"
+        res["error"] = err or "页面可访问但未解析到条目（可能改版，需更新选择器）"
+        if attempt < 3:
+            print(f"[crawl] {src['id']} 第 {attempt} 次失败（{res['error'][:60]}），重试…", flush=True)
+            await asyncio.sleep(2 * attempt)
     return res
 
 async def main():
