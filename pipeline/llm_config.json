@@ -1,0 +1,7 @@
+{
+  "enabled": false,
+  "note": "按用户要求于 2026-11-15 暂停 DeepSeek 调用。开启方式：把 enabled 改回 true 即可，无需改其他文件。",
+  "paused_at": "2026-11-15",
+  "provider": "api.deepseek.com",
+  "model": "deepseek-chat"
+}

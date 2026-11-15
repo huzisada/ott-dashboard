@@ -44,6 +44,19 @@ def log(msg):
     print("[summarize] " + msg, flush=True)
 
 
+def llm_enabled():
+    """总开关：pipeline/llm_config.json 里 enabled=false 时全程不发 API 请求。
+    配置文件缺失或解析失败时默认开启，兼容没有该文件的旧部署。"""
+    cfg = BASE / "llm_config.json"
+    if not cfg.is_file():
+        return True
+    try:
+        return bool(json.loads(cfg.read_text(encoding="utf-8")).get("enabled", True))
+    except Exception as e:
+        log(f"llm_config.json 解析失败（{e}），按开启处理")
+        return True
+
+
 def load_data():
     """读取 data.js（管道产物优先，其次仓库根），返回 (cards, meta)。
     CI 里仓库根的 data.js 是上次部署的旧版本，与刚抓的新数据时间戳不一致，
@@ -216,6 +229,10 @@ def resolve_meta(it, idx):
 
 
 def main():
+    # 暂停开关优先于一切：连 key 都不读，确保不会发出任何请求
+    if not llm_enabled():
+        log("已按配置暂停 LLM 调用（llm_config.json enabled=false），本次不发起任何 API 请求")
+        return 0
     api_key = (os.environ.get("LLM_API_KEY") or "").strip()
     key_file = BASE / "llm_key.txt"
     if not api_key and key_file.is_file():
