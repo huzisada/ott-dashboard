@@ -54,6 +54,13 @@ else
   echo "未配置 LLM key，跳过全站总结（前端回退规则版）" >> "$LOG"
 fi
 
+# 3.6) 生成每日早报并推送企业微信（旁路能力：未配置 WECOM_WEBHOOK 时静默跳过）
+#      webhook 只从环境变量 / Secret 读取，绝不写进仓库（仓库是公开的）
+if ! python3 daily_brief.py --out "$DIR/data/brief.md" >> "$LOG" 2>&1; then
+  echo "!! 每日早报生成失败（不影响发布）" >> "$LOG"
+fi
+python3 push_wecom.py --message "$DIR/data/brief.md" >> "$LOG" 2>&1 || true
+
 # 4) 同步到部署目录（前端直接读 data.js）
 if [ -d "$DEPLOY" ]; then
   cp "$DIR/data/data.js" "$DEPLOY/data.js"
