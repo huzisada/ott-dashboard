@@ -158,7 +158,80 @@ def llm_brief(d):
     return txt
 
 
-def rule_brief(d, per_section):
+# ---- 版式：企业微信仅支持 info(绿) / comment(灰) / warning(橙红) 三种字色 ----
+STYLE_ICON = {"政策": "🏛️", "竞品": "🎯", "数据": "📈", "行业": "📰"}
+
+
+def style_header(d, style):
+    """标题 + 数据概览行。三版共用，配色随风格微调。"""
+    m = d["meta"]
+    b = m.get("by_cat", {})
+    day = stamp(d)
+    total = m.get("total", 0)
+    line = (f"政策 {b.get('政策', 0)} / 竞品 {b.get('竞品', 0)} / "
+            f"数据 {b.get('数据', 0)} / 行业 {b.get('行业', 0)}")
+    if style == "C":
+        return (f"OTT 早报 · {day.month}-{day.day:02d}\n"
+                f'> <font color="comment">{total} 条 · {line}</font>\n\n')
+    if style == "B":
+        return f"📊 OTT 早报 · {day.month}月{day.day}日\n"
+    return (f"# 📊 OTT 行业早报 · {day.month}月{day.day}日\n"
+            f'> <font color="info">今日抓取 {total} 条 · {line}</font>\n\n')
+
+
+def grouped(items, per_section):
+    out = []
+    for cat, title in SECTIONS:
+        group = sorted([x for x in items if x["cat"] == cat], key=sort_key)[:per_section]
+        if group:
+            out.append((cat, title, group))
+    return out
+
+
+def body_A(groups):
+    """A 图标分节：图标分节 + 首条加粗 + 来源统一灰字，保留全部条目。"""
+    txt = ""
+    for cat, title, group in groups:
+        txt += f"**{STYLE_ICON.get(cat, '•')} {title}**\n"
+        for i, x in enumerate(group):
+            ds = fmt_date(x["d"])
+            src = clip(x["src"], 12)
+            tail = f"{src}{' · ' + ds if ds else ''}"
+            bold = f"**[{clip(x['t'])}]({x['u']})**" if i == 0 else f"[{clip(x['t'])}]({x['u']})"
+            txt += f"{bold}\n<font color=\"comment\">{tail}</font>\n"
+        txt += "\n"
+    return txt
+
+
+def body_B(groups):
+    """B 今日焦点：顶部焦点框放全局热度最高一条，其余每节精简展示。"""
+    txt = ""
+    first = True
+    for cat, title, group in groups:
+        if first:
+            x = group[0]
+            txt += (f'> <font color="warning">今日焦点｜{clip(x["t"])}</font>\n'
+                    f'> <font color="comment">{clip(x["src"], 14)} · 热度 {x["h"]}</font>\n\n')
+            first = False
+        txt += f"**{STYLE_ICON.get(cat, '•')} {title}**  <font color=\"comment\">近 30 日 {len(group)} 条</font>\n"
+        for x in group[:2]:
+            txt += f"> [{clip(x['t'])}]({x['u']})  <font color=\"comment\">{fmt_date(x['d'])}</font>\n"
+        txt += "\n"
+    return txt
+
+
+def body_C(groups):
+    """C 极简速读：去掉编号与日期，标题即链接，来源内联，字数最少。"""
+    txt = ""
+    for cat, title, group in groups:
+        txt += f"<font color=\"info\">[{cat}]</font>\n"
+        for x in group:
+            txt += f"[{clip(x['t'], 30)}]({x['u']})  <font color=\"comment\">{clip(x['src'], 10)}</font>\n"
+        txt += "\n"
+    return txt
+
+
+def rule_brief(d, per_section, style="A"):
     items = collect(d)
     cutoff = date_num((stamp(d) - timedelta(days=30)).strftime("%Y-%m-%d"))
     # 历史库里存着几个月前的稿件，早报不能把它们当成「今天发生的事」：
@@ -166,17 +239,9 @@ def rule_brief(d, per_section):
     fresh = [x for x in items if date_num(x["d"]) >= cutoff]
     if len(fresh) >= 8:
         items = fresh
-    txt = header(d, "规则版")
-    for cat, title in SECTIONS:
-        group = sorted([x for x in items if x["cat"] == cat], key=sort_key)[:per_section]
-        if not group:
-            continue
-        txt += f"**{title}**\n"
-        for i, x in enumerate(group, 1):
-            ds = fmt_date(x["d"])
-            tail = f"（{clip(x['src'], 12)}{' · ' + ds if ds else ''}）"
-            txt += f"{i}. [{clip(x['t'])}]({x['u']}){tail}\n"
-        txt += "\n"
+    groups = grouped(items, per_section)
+    txt = style_header(d, style)
+    txt += {"A": body_A, "B": body_B, "C": body_C}.get(style, body_A)(groups)
     return txt
 
 
@@ -202,15 +267,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(BASE / "data" / "brief.md"))
     ap.add_argument("--stdout", action="store_true", help="同时把早报正文打到日志")
+    ap.add_argument("--style", choices=list("ABC"), default="A",
+                    help="版式：A 图标分节(默认) / B 今日焦点 / C 极简速读")
     args = ap.parse_args()
 
     d = load_data()
     brief = llm_brief(d)
-    source = "LLM" if brief else "规则版"
+    source = "LLM" if brief else f"规则版·{args.style}"
     if not brief:
         # 条目多时逐档减少每节条数，优先保证「不超长、链接都在」
         for n in (5, 4, 3, 2):
-            brief = rule_brief(d, n)
+            brief = rule_brief(d, n, args.style)
             if len(brief.encode("utf-8")) <= MAX_BYTES:
                 break
     brief = cap(brief)
