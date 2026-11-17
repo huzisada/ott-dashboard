@@ -933,6 +933,8 @@
   .tf-mt{display:block;font-size:10.5px;color:var(--tx-dim2);margin-top:2px}
   /* 主区顶部速览：右栏收起或窄屏时由它接管，避免「速览随右栏一起消失」；
      宽屏且右栏展开时让位给右栏，不做重复。内容由 renderTopFlash() 同步渲染。 */
+  /* 非主页视图（竞品/数据/热点/政策/设置）不显示今日重点速览，仅主页保留 */
+  body.hide-flash .topflash,body.hide-flash .topflash-m{display:none !important}
   .topflash-m{display:none;margin:0 0 14px}
   .grid-wrap:has(#dailySide.collapsed) .topflash-m{display:block}
   .topflash-m .tf-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 18px}
@@ -1650,6 +1652,8 @@ function matchKw(item, card){
 }
 
 function render(){
+  // 速览只在主页显示；切到竞品/数据/热点/政策/设置等分类视图时隐藏
+  document.body.classList.toggle('hide-flash', activeNav !== 'home');
   nav.innerHTML = navHTML();
   pageTitle.textContent = TITLES[activeNav];
 
