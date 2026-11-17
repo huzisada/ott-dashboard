@@ -1057,6 +1057,44 @@
     color:var(--accent);font-size:9.5px;display:grid;place-items:center;font-weight:800;flex-shrink:0
   }
   .ai-side .seg p{margin:0;font-size:12.5px;color:var(--tx-mid);line-height:1.7}
+
+  /* ===== 全站总结三套版式（body 上 .sum-A / .sum-B / .sum-C 切换） ===== */
+  .ai-side .seg-items{display:flex;flex-direction:column;gap:9px}
+  .ai-side .sum-item{padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.018)}
+  .ai-side .si-title{font-size:12.5px;line-height:1.55;color:var(--tx);font-weight:600}
+  .ai-side .si-title a{color:inherit;text-decoration:none}
+  .ai-side .si-title a:hover{color:var(--accent)}
+  .ai-side .si-meta{font-size:10.5px;color:var(--tx-dim2);margin-top:3px}
+  .ai-side .si-dot{margin:0 5px;opacity:.6}
+  .ai-side .si-sum{font-size:11.5px;line-height:1.65;color:var(--tx-mid);margin-top:5px}
+  .ai-side .si-insight{font-size:11.5px;line-height:1.6;color:var(--accent);margin-top:6px}
+  .ai-side .si-ar{display:inline-block;margin-right:5px;opacity:.7;font-weight:700}
+
+  /* A 图标分节：左侧竖色条 + 解读独立成块，层次最清楚（默认） */
+  body.sum-A .ai-side .sum-item{border-left:2px solid var(--accent)}
+  body.sum-A .ai-side .si-sum{
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+    color:var(--tx-dim)
+  }
+  body.sum-A .ai-side .si-insight{
+    background:var(--accent-soft);border-radius:6px;padding:5px 8px;margin-top:7px
+  }
+
+  /* B 今日焦点：首条高亮为焦点卡，其余紧凑卡片 */
+  body.sum-B .ai-side .seg-items>.sum-item:first-child{
+    background:linear-gradient(135deg,rgba(11,197,160,.10),rgba(11,197,160,.02));
+    border-color:rgba(11,197,160,.35)
+  }
+  body.sum-B .ai-side .seg-items>.sum-item:first-child .si-title{font-size:13px}
+  body.sum-B .ai-side .si-sum{display:none}
+  body.sum-B .ai-side .sum-item{padding:8px 10px}
+
+  /* C 极简速读：无卡片框、无摘要，解读压成一行，密度最高 */
+  body.sum-C .ai-side .sum-item{border:none;border-bottom:1px dashed var(--line);border-radius:0;background:none;padding:7px 0}
+  body.sum-C .ai-side .si-sum{display:none}
+  body.sum-C .ai-side .si-insight{margin-top:2px;font-size:11px}
+  body.sum-C .ai-side .seg-items{gap:0}
+
   .ai-side ul.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
   .ai-side ul.pts li{
     font-size:12.5px;line-height:1.6;color:var(--tx-mid);padding:8px 10px;
@@ -3795,6 +3833,8 @@ function aiHomePool(){
   return list;
 }
 const AI_SECTION_ORDER = ['政策 / 监管动态','行业数据 / 报告','竞品 / 厂商动态','行业动态','其他动态'];
+/* 全站总结版式：A 图标分节(默认) / B 今日焦点 / C 极简速读。改这一行即可换版。 */
+const SUM_STYLE = 'A';
 const AI_PER_SECTION = 5;
 
 /* LLM 全站总结（pipeline/summarize.py → summary.js）。
@@ -3843,6 +3883,8 @@ function dailyBuild(){
   const body = document.getElementById('dailyBody');
   const meta = document.getElementById('dailyMeta');
   if(!body) return;
+  document.body.classList.remove('sum-A','sum-B','sum-C');
+  document.body.classList.add('sum-' + (['A','B','C'].includes(SUM_STYLE) ? SUM_STYLE : 'A'));
   const S = llmSummary();
   if(S){
     renderLLMDaily(S, body, meta);
@@ -3869,15 +3911,20 @@ function dailyBuild(){
     .concat(Object.keys(groups).filter(t=>!AI_SECTION_ORDER.includes(t)));
 
   const itemHtml = x => {
-    const u = x.it.u && x.it.u!=='#' && x.it.u!=='待补充';
-    return `<div style="padding:7px 0;border-bottom:1px dashed var(--line)">
-      <div style="font-size:12.5px;line-height:1.6">${u?`<a href="${x.it.u}" target="_blank" rel="noopener" style="color:var(--tx);text-decoration:none">${escapeHtml(x.it.t)}</a>`:escapeHtml(x.it.t)}</div>
-      <div style="font-size:11px;color:var(--tx-dim2);margin:3px 0" title="${escapeHtml(dateTitle(x.it.d))}">（${escapeHtml(dateLabel(x.it.d))}，${escapeHtml(x.card.name)}）</div>
-      ${x.it.summary && x.it.summary!==x.it.t ? `<div style="font-size:11.5px;color:var(--tx-dim);line-height:1.6">${escapeHtml(x.it.summary)}</div>`:''}
-      <div style="font-size:11.5px;color:var(--accent);margin-top:3px">→ 解读：${escapeHtml(_dailyInsight(x))}</div>
+    const u = x.it.u && x.it.u!='#' && x.it.u!='待补充';
+    const date = escapeHtml(dateLabel(x.it.d));
+    const src = escapeHtml(x.card.name);
+    const sum = (x.it.summary && x.it.summary!==x.it.t)
+      ? `<div class="si-sum">${escapeHtml(x.it.summary)}</div>` : '';
+    return `<div class="sum-item">
+      <div class="si-title">${u?`<a href="${x.it.u}" target="_blank" rel="noopener">${escapeHtml(x.it.t)}</a>`:escapeHtml(x.it.t)}</div>
+      <div class="si-meta" title="${escapeHtml(dateTitle(x.it.d))}">${date}<span class="si-dot">·</span>${src}</div>
+      ${sum}
+      <div class="si-insight"><span class="si-ar">↳</span>${escapeHtml(_dailyInsight(x))}</div>
     </div>`;
   };
 
+  const secIcon = t => t.includes('政策')?'🏛️':t.includes('数据')?'📈':t.includes('竞品')?'🎯':t.includes('行业')?'📰':'•';
   let secNo = 1;
   const secs = titles.map(title=>{
     const xs = groups[title];
@@ -3886,7 +3933,7 @@ function dailyBuild(){
       ? `<div class="ai-more">另有 ${rest} 条未展开 · 可在左侧对应卡片内滚动查看</div>` : '';
     return `<div class="seg">
       <h5><i>${secNo++}</i>${escapeHtml(title)}<em class="seg-n">${xs.length} 条</em></h5>
-      ${xs.slice(0, AI_PER_SECTION).map(itemHtml).join('')}
+      <div class="seg-items">${xs.slice(0, AI_PER_SECTION).map(itemHtml).join('')}</div>
       ${more}
     </div>`;
   }).join('');
