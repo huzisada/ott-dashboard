@@ -1525,7 +1525,6 @@ const NAV = [
   {id:'data',        label:'行业数据', icon:'bar'},
   {id:'hot',         label:'热点节目', icon:'play'},
   {id:'policy',      label:'政策动态', icon:'file'},
-  {id:'inspiration', label:'灵感收集', icon:'bulb'},
   {id:'settings',    label:'设置',     icon:'gear'},
 ];
 
@@ -1607,10 +1606,9 @@ const CARD_VISIBLE = 4;
 
 const TITLES = {
   home:'OTT 行业资讯', competitor:'竞品动态对标', data:'行业数据与报告', hot:'热点节目 · 剧集与综艺',
-  policy:'政策动态监控', inspiration:'灵感收集箱', feedback:'意见反馈', settings:'设置'
+  policy:'政策动态监控', feedback:'意见反馈', settings:'设置'
 };
 const EMPTY = {
-  inspiration:{h:'灵感收集箱', p:'把对竞聘有用的「金句 / 可引用数据」收藏到这里，一键导出到讲稿。'},
   feedback:{h:'意见反馈', p:'对看板有建议？在这里提交，我们会定期优化信息源与关键词规则。'},
   settings:{h:'设置', p:'抓取频率、AI 摘要风格、通知方式等，将在此配置。'},
 };
@@ -1656,7 +1654,7 @@ function render(){
   pageTitle.textContent = TITLES[activeNav];
 
   // 非卡片视图
-  if(['inspiration','feedback','settings'].includes(activeNav)){
+  if(['feedback','settings'].includes(activeNav)){
     const e = EMPTY[activeNav];
     grid.innerHTML = `<div class="empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICONS[NAV.find(n=>n.id===activeNav).icon]}</svg>
