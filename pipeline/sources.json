@@ -134,6 +134,28 @@
       "note": "AI 行业媒体，用于订阅源管理测试"
     },
     {
+      "id": "gd_gd_tzgg",
+      "name": "广东广电局·通知公告",
+      "cat": "政策",
+      "type": "policy",
+      "freq": "workday",
+      "list_url": "https://gbdsj.gd.gov.cn/zxzx/tzgg/index.html",
+      "engine": "static",
+      "enabled": true,
+      "note": "广东省广播电视局通知公告，地方广电政策落地一线"
+    },
+    {
+      "id": "gd_gd_zcfg",
+      "name": "广东广电局·政策法规",
+      "cat": "政策",
+      "type": "policy",
+      "freq": "workday",
+      "list_url": "https://gbdsj.gd.gov.cn/zwgk/zcfg",
+      "engine": "static",
+      "enabled": true,
+      "note": "广东省广播电视局政策法规，含超高清/微短剧等地方政策"
+    },
+    {
       "id": "mgtv_mango",
       "name": "芒果超媒",
       "cat": "竞品",
