@@ -1095,6 +1095,48 @@
   body.sum-C .ai-side .si-insight{margin-top:2px;font-size:11px}
   body.sum-C .ai-side .seg-items{gap:0}
 
+  /* D 简报式：顶部概览 + 重点 Top3 + 彩色分类标签，绿色只留给重点，弱化逐条绿块 */
+  .ai-side .brief-hero{
+    position:relative;overflow:hidden;border-radius:12px;padding:14px 15px 13px;margin-bottom:12px;
+    background:linear-gradient(135deg,rgba(11,197,160,.16),rgba(11,197,160,.03) 62%,rgba(255,255,255,.02));
+    border:1px solid rgba(11,197,160,.28)
+  }
+  .ai-side .brief-hero::after{
+    content:"";position:absolute;right:-26px;top:-30px;width:110px;height:110px;border-radius:50%;
+    background:radial-gradient(circle,rgba(11,197,160,.18),transparent 70%);pointer-events:none
+  }
+  .ai-side .bh-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+  .ai-side .bh-tag{font-size:9.5px;font-weight:800;letter-spacing:1.6px;color:var(--accent)}
+  .ai-side .bh-date{font-size:10.5px;color:var(--tx-dim2);font-variant-numeric:tabular-nums}
+  .ai-side .bh-title{font-size:17px;font-weight:800;color:var(--tx);letter-spacing:.5px;margin-bottom:11px}
+  .ai-side .bh-stats{display:flex;gap:6px}
+  .ai-side .bs-cell{
+    flex:1;display:flex;flex-direction:column;gap:2px;padding:7px 4px;border-radius:8px;
+    background:rgba(8,9,11,.34);border:1px solid rgba(255,255,255,.05);text-align:center
+  }
+  .ai-side .bs-cell b{font-size:17px;font-weight:800;color:var(--accent);line-height:1;font-variant-numeric:tabular-nums}
+  .ai-side .bs-cell span{font-size:10px;color:var(--tx-dim2)}
+
+  /* D 版分节：彩色标签 + 弱化逐条解读 */
+  body.sum-D .ai-side .seg h5 i{display:none}
+  body.sum-D .ai-side .seg h5{font-size:12px;font-weight:700;color:var(--tx)}
+  .ai-side .seg-tag{
+    display:inline-block;font-size:9.5px;font-weight:700;line-height:1.5;padding:1px 7px;margin-right:7px;
+    border-radius:20px;vertical-align:middle
+  }
+  .ai-side .seg-tag[data-cat="政策"]{color:#e0b341;background:rgba(224,179,65,.12);border:1px solid rgba(224,179,65,.28)}
+  .ai-side .seg-tag[data-cat="行业数据"]{color:#6aa9ff;background:rgba(106,169,255,.12);border:1px solid rgba(106,169,255,.28)}
+  .ai-side .seg-tag[data-cat="竞品"]{color:#ff8a6b;background:rgba(255,138,107,.12);border:1px solid rgba(255,138,107,.28)}
+  .ai-side .seg-tag[data-cat="行业"]{color:#b98cff;background:rgba(185,140,255,.12);border:1px solid rgba(185,140,255,.28)}
+  .ai-side .seg-tag:not([data-cat="政策"]):not([data-cat="行业数据"]):not([data-cat="竞品"]):not([data-cat="行业"]){color:var(--tx-dim);background:rgba(255,255,255,.05);border:1px solid var(--line)}
+  body.sum-D .ai-side .sum-item{padding:8px 0 9px;border:none;border-bottom:1px solid var(--line);border-radius:0;background:none}
+  body.sum-D .ai-side .seg-items{gap:0}
+  body.sum-D .ai-side .si-sum{display:none}
+  body.sum-D .ai-side .si-title{font-size:12px;font-weight:600}
+  body.sum-D .ai-side .si-insight{
+    background:none;padding:0;margin-top:4px;font-size:10.5px;color:var(--tx-dim2)
+  }
+
   .ai-side ul.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
   .ai-side ul.pts li{
     font-size:12.5px;line-height:1.6;color:var(--tx-mid);padding:8px 10px;
@@ -3833,8 +3875,8 @@ function aiHomePool(){
   return list;
 }
 const AI_SECTION_ORDER = ['政策 / 监管动态','行业数据 / 报告','竞品 / 厂商动态','行业动态','其他动态'];
-/* 全站总结版式：A 图标分节(默认) / B 今日焦点 / C 极简速读。改这一行即可换版。 */
-const SUM_STYLE = 'A';
+/* 全站总结版式：D 简报式(默认) / A 图标分节 / B 今日焦点 / C 极简速读。改这一行即可换版。 */
+const SUM_STYLE = 'D';
 const AI_PER_SECTION = 5;
 
 /* LLM 全站总结（pipeline/summarize.py → summary.js）。
@@ -3883,8 +3925,8 @@ function dailyBuild(){
   const body = document.getElementById('dailyBody');
   const meta = document.getElementById('dailyMeta');
   if(!body) return;
-  document.body.classList.remove('sum-A','sum-B','sum-C');
-  document.body.classList.add('sum-' + (['A','B','C'].includes(SUM_STYLE) ? SUM_STYLE : 'A'));
+  document.body.classList.remove('sum-A','sum-B','sum-C','sum-D');
+  document.body.classList.add('sum-' + (['A','B','C','D'].includes(SUM_STYLE) ? SUM_STYLE : 'D'));
   const S = llmSummary();
   if(S){
     renderLLMDaily(S, body, meta);
@@ -3924,15 +3966,16 @@ function dailyBuild(){
     </div>`;
   };
 
-  const secIcon = t => t.includes('政策')?'🏛️':t.includes('数据')?'📈':t.includes('竞品')?'🎯':t.includes('行业')?'📰':'•';
   let secNo = 1;
   const secs = titles.map(title=>{
     const xs = groups[title];
     const rest = xs.length - AI_PER_SECTION;
     const more = rest > 0
       ? `<div class="ai-more">另有 ${rest} 条未展开 · 可在左侧对应卡片内滚动查看</div>` : '';
+    const tag = title.split(' / ')[0];
+    const restTitle = title.includes(' / ') ? title.split(' / ').slice(1).join(' / ') : title;
     return `<div class="seg">
-      <h5><i>${secNo++}</i>${escapeHtml(title)}<em class="seg-n">${xs.length} 条</em></h5>
+      <h5><i>${secNo++}</i><span class="seg-tag" data-cat="${escapeHtml(tag)}">${escapeHtml(tag)}</span>${escapeHtml(restTitle)}<em class="seg-n">${xs.length} 条</em></h5>
       <div class="seg-items">${xs.slice(0, AI_PER_SECTION).map(itemHtml).join('')}</div>
       ${more}
     </div>`;
@@ -3950,7 +3993,20 @@ function dailyBuild(){
     + '所有条目均来自真实抓取，可点标题溯源原文。';
 
   try{ renderTopFlash(); }catch(err){ console.warn('renderTopFlash', err); }
-  body.innerHTML = secs + `
+
+  const brief = SUM_STYLE === 'D' ? (()=>{
+    const nSource = new Set(pool.map(x=>x.card.name)).size;
+    const stat = (n,l)=>`<div class="bs-cell"><b>${n}</b><span>${l}</span></div>`;
+    return `<div class="brief-hero">
+      <div class="bh-head"><span class="bh-tag">DAILY BRIEF</span><span class="bh-date">${escapeHtml(d.latest ? d.latest.slice(5) : (d.fetchDay||'').slice(5) || '—')}</span></div>
+      <div class="bh-title">今日资讯简报</div>
+      <div class="bh-stats">
+        ${stat(pool.length,'条资讯')}${stat(titles.length,'个板块')}${stat(nSource,'个来源')}
+      </div>
+    </div>`;
+  })() : '';
+
+  body.innerHTML = brief + secs + `
     <div class="seg">
       <h5><i>✍️</i>一句话小结</h5>
       <p style="font-size:12px;line-height:1.7;color:var(--tx-dim)">${escapeHtml(summary)}</p>
