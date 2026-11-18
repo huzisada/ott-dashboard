@@ -110,6 +110,14 @@ created: "2026-11-17"
   (`btnTrend`)、「导出竞品」(`btnExportComp`)。已删除 DOM 及三处 `.onclick` 绑定
   （`openTrend` / `dailyToggle` / 导出剪贴板逻辑留作死代码无害；`syncDailyBtn` 有 `if(!b)return`
   保护可保留）。hero `.actions` 现只剩「订阅源管理」(`btnSources`)。
+- **AI 总结跟随视图（2026-11-18）**：用户要「切到竞品动态，AI 总结变竞品总结」。
+  `SUMMARY_FOCUS` 把 activeNav 映射到演示数据 sections 分节名：
+  competitor→竞品 / data→数据 / hot→热点 / policy→政策 / home→null(全站)。
+  `summaryFocus()` 返回当前聚焦；`renderLLMDaily()` 按 focus 只渲染对应那一节
+  （概览段保留但去掉【演示数据】前缀），角标 [n] 照常从 refs 解析可点；
+  右栏标题随视图变「AI 助手 · XX总结」。规则版 `dailyBuild()` 也按 focus 过滤 pool。
+  导航 click 里 `render()` 后调 `dailyBuild()` 触发重渲染（仅面板展开时）。
+  注意：这是**内容联动**，与之前的**显隐不联动**不冲突——切视图不改展开/收起态，只换内容。
 - **AI 全站总结右侧飞标（2026-11-18）**：删了 `btnDaily` 后，给右栏总结加了独立飞标
   `#dailyTab`（CSS `.daily-tab`，fixed right:0、竖排「AI 总结」+绿点）。
   `dailyClose()` 里显示飞标、`dailyOpen()` 里隐藏飞标；飞标 `onclick=dailyOpen()`。
