@@ -352,6 +352,42 @@
     .notif-panel{width:100vw;border-left:0}
   }
 
+  /* ============ 抓取记录抽屉（复用通知抽屉骨架） ============ */
+  body.fetchlog-open .fetchlog-panel{transform:translateX(0)}
+  .fetchlog-panel{z-index:61}
+  .fetchlog-tip{
+    padding:11px 18px;font-size:11.5px;color:var(--tx-dim2);line-height:1.5;
+    border-bottom:1px solid var(--line);background:rgba(255,255,255,.015);flex-shrink:0
+  }
+  .flog-item{
+    padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.06);
+    display:flex;flex-direction:column;gap:8px
+  }
+  .flog-item:last-child{border-bottom:0}
+  .flog-item:hover{background:rgba(255,255,255,.018)}
+  .flog-top{display:flex;align-items:center;gap:9px}
+  .flog-dot{flex-shrink:0;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(11,197,160,.6)}
+  .flog-item:not(:first-child) .flog-dot{background:#5f6167;box-shadow:none}
+  .flog-time{font-size:14px;font-weight:700;color:#e9eaee}
+  .flog-latest{
+    font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;
+    color:var(--accent);background:rgba(11,197,160,.12);border:1px solid rgba(11,197,160,.35)
+  }
+  .flog-metrics{display:flex;flex-wrap:wrap;gap:6px;padding-left:17px}
+  .flog-chip{
+    font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;
+    color:var(--tx-mid);background:rgba(255,255,255,.04);border:1px solid var(--line)
+  }
+  .flog-chip b{color:#e3e4e8;font-weight:700}
+  .flog-chip.warn{color:#ff8a5c;border-color:rgba(255,138,92,.4);background:rgba(255,138,92,.08)}
+  .flog-chip.warn b{color:#ff8a5c}
+  .flog-sub{padding-left:17px;font-size:11px;color:#5f6167;line-height:1.5}
+  .flog-empty{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:80px 20px;color:var(--tx-dim2);text-align:center;gap:10px;font-size:13px
+  }
+  .flog-empty svg{width:36px;height:36px;opacity:.4}
+
   /* ============ Modal ============ */
   .modal-mask{
     position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
@@ -1168,6 +1204,9 @@
         <input id="search" type="text" placeholder="搜索 OTT 资讯 / 竞品 / 政策关键词..." autocomplete="off" />
       </div>
       <div class="tools">
+        <button class="icon-btn" id="btnFetchLog" title="抓取记录" aria-label="抓取记录">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+        </button>
         <button class="icon-btn" id="btnRefresh" title="重新拉取数据" aria-label="重新拉取数据">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         </button>
@@ -1185,10 +1224,6 @@
       <section class="hero">
         <div>
           <h2 id="pageTitle">OTT 行业资讯</h2>
-          <div class="meta">
-            👉 今天是 <b id="todayLine">—</b>　·　<span class="hi" id="policyState">政策源加载中…</span><br/>
-            <span class="ln2">没有溯源的资讯是噪音，没有数据的判断是空想。本站不编造任何资讯，未覆盖内容一律标注「待补充」。</span>　·　数据源：<span class="hi" id="dataMode">加载中…</span>　·　抓取于 <span class="hi" id="lastFetch">—</span>
-          </div>
         </div>
         <div class="actions">
           <button class="btn btn-primary" id="btnSources">
@@ -1310,6 +1345,18 @@
     <button class="notif-tab" data-f="vendor">厂商</button>
   </div>
   <div class="notif-body" id="notifBody"></div>
+</div>
+
+<!-- 抓取记录抽屉（顶栏时钟图标打开，记录每次抓取的时间/条数/源状态，累积可追溯） -->
+<div class="notif-panel fetchlog-panel" id="fetchLogPanel" aria-hidden="true">
+  <div class="notif-head">
+    <div class="title">抓取记录<span class="cnt" id="fetchLogCnt">· 0 次</span></div>
+    <button class="close" id="fetchLogClose" title="关闭">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="fetchlog-tip">每次抓取自动留痕 · 时间、条数与源状态一目了然 · 最多保留 60 次</div>
+  <div class="notif-body" id="fetchLogBody"></div>
 </div>
 
 <!-- AI 助手 · 左侧内嵌栏（收缩时显示竖排唤起标签） -->
@@ -1995,6 +2042,66 @@ document.getElementById('notifClose').onclick = ()=>{
   document.body.classList.remove('notif-open');
   document.getElementById('notifPanel').setAttribute('aria-hidden','true');
 };
+
+/* ============ 抓取记录抽屉（读取 data.js 中累积的 fetch_history） ============ */
+function fmtFetchFull(iso){
+  const d = parseStamp(iso); if(!d) return '—';
+  const pad = n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function renderFetchLog(){
+  const body = document.getElementById('fetchLogBody');
+  const cnt  = document.getElementById('fetchLogCnt');
+  const hist = (window.__OTT_DATA__ && window.__OTT_DATA__.fetch_history) || [];
+  if(cnt) cnt.textContent = `· ${hist.length} 次`;
+  if(!hist.length){
+    body.innerHTML = `<div class="flog-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <div>暂无抓取记录<br/>下次数据更新后会自动留痕</div>
+    </div>`;
+    return;
+  }
+  body.innerHTML = hist.map((h,i)=>{
+    const srcBad = (h.source_total||0) - (h.source_ok||0);
+    const polBad = (h.policy_total||0) - (h.policy_ok||0);
+    const date = fmtFetchFull(h.at);
+    const chips = [
+      `<span class="flog-chip"><b>${h.total||0}</b> 条</span>`,
+      `<span class="flog-chip${srcBad? ' warn':''}">源 <b>${h.source_ok||0}/${h.source_total||0}</b>${srcBad?` · ${srcBad} 异常`:' 正常'}</span>`,
+      (h.policy_total ? `<span class="flog-chip${polBad? ' warn':''}">政策源 <b>${h.policy_ok||0}/${h.policy_total}</b>${polBad?` · ${polBad} 异常`:' 正常'}</span>` : '')
+    ].join('');
+    const sub = `有日期 ${h.with_date||0} · 待补充 ${h.pending_date||0} · 过滤陈旧 ${h.stale_filtered||0} · 去重 ${h.dup_merged||0}`;
+    return `<div class="flog-item">
+      <div class="flog-top">
+        <span class="flog-dot"></span>
+        <span class="flog-time">${date}</span>
+        ${i===0?'<span class="flog-latest">最新</span>':''}
+      </div>
+      <div class="flog-metrics">${chips}</div>
+      <div class="flog-sub">${sub}</div>
+    </div>`;
+  }).join('');
+}
+function openFetchLog(){
+  document.body.classList.remove('notif-open');
+  document.getElementById('notifPanel').setAttribute('aria-hidden','true');
+  document.body.classList.add('fetchlog-open');
+  document.getElementById('fetchLogPanel').setAttribute('aria-hidden','false');
+  renderFetchLog();
+}
+function closeFetchLog(){
+  document.body.classList.remove('fetchlog-open');
+  document.getElementById('fetchLogPanel').setAttribute('aria-hidden','true');
+}
+document.getElementById('btnFetchLog').onclick = ()=>{
+  document.body.classList.contains('fetchlog-open') ? closeFetchLog() : openFetchLog();
+};
+document.getElementById('fetchLogClose').onclick = closeFetchLog;
+/* 点铃铛时顺手关掉抓取记录，避免两个抽屉叠加 */
+document.getElementById('btnBell').addEventListener('click', ()=>{
+  if(document.body.classList.contains('notif-open')) closeFetchLog();
+});
+
 document.getElementById('notifRefresh').onclick = ()=>{
   const btn = document.getElementById('notifRefresh');
   if(btn.disabled) return;
@@ -2946,46 +3053,6 @@ function bjFetchDay(iso){
   const pad = n=>String(n).padStart(2,'0');
   return `${b.getUTCFullYear()}-${pad(b.getUTCMonth()+1)}-${pad(b.getUTCDate())}`;
 }
-function hoursSince(iso){
-  const d = parseStamp(iso); if(!d) return null;
-  return (Date.now()-d.getTime())/3600000;
-}
-function renderDataStatus(){
-  // 今日日期（替换原先写死的「10 月 10 日」）
-  const now = new Date();
-  const wd = ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()];
-  const hh = now.getHours();
-  const period = hh<6?'凌晨':hh<12?'上午':hh<14?'中午':hh<18?'下午':'晚上';
-  const tl = document.getElementById('todayLine');
-  if(tl) tl.textContent = `${now.getMonth()+1} 月 ${now.getDate()} 日，${wd}${period}`;
-
-  const mode = document.getElementById('dataMode');
-  if(mode){
-    const ok = META.source_ok||0, tot = META.source_total||0;
-    mode.textContent = `真实抓取 · ${META.total||0} 条 · ${ok}/${tot} 源正常`;
-    mode.title = `共抓取 ${META.total||0} 条资讯；过滤陈旧 ${META.stale_filtered||0} 条、去重 ${META.dup_merged||0} 条`;
-  }
-  const lf = document.getElementById('lastFetch');
-  if(lf){
-    const h = hoursSince(META.generated_at);
-    lf.textContent = fmtFetchTime(META.generated_at);
-    // 数据陈旧（>30h）时高亮提醒。阈值放宽到 30h：自动补抓窗口持续到下午，
-    // 24h 会在补抓完成前误报；30h 仍能在真正连续漏跑时报警。
-    if(h!==null && h>30){
-      lf.textContent += `（已 ${Math.floor(h)} 小时未更新，自动补抓未成功）`;
-      lf.style.color = '#ff6b4a';
-    }
-  }
-  const ps = document.getElementById('policyState');
-  if(ps){
-    const src = (RAW.sources||[]).filter(x=>x.type==='policy');
-    const bad = src.filter(x=>x.status!=='ok');
-    ps.textContent = bad.length ? `政策源 ${src.length-bad.length}/${src.length} 正常，${bad.length} 个异常` : `政策源 ${src.length} 个 · 每日自动抓取（漏跑自动补抓）`;
-    ps.style.color = bad.length ? '#ff6b4a' : '';
-  }
-}
-renderDataStatus();
-
 /* 静默轮询：开放标签内每 20 分钟重新读取最新 data.js（赶上每日更新） */
 setInterval(()=>{ autoReload(); }, REFRESH_MS);
 
