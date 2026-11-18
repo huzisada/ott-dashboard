@@ -33,12 +33,10 @@
     --red:#ff5c5c;
     --flame:#ff6b4a;
     --radius:16px;
-    --sidebar-w:224px;
+    --sidebar-w:0px;
     --ai-w:396px;
     --ai-list-w:200px;
   }
-  /* 侧栏收缩态：导航收成图标栏 */
-  body.nav-mini{--sidebar-w:72px}
   /* AI 助手占全屏：主区不再右移（面板全屏覆盖正文） */
   body.ai-open{--ai-push:0px}
   body{--ai-push:0px}
@@ -65,70 +63,42 @@
   /* ============ Layout ============ */
   .app{min-height:100vh}
 
-  /* ============ Sidebar ============ */
-  .sidebar{
-    position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;
-    background:var(--sidebar);border-right:1px solid var(--line);
-    display:flex;flex-direction:column;z-index:44;transition:width .24s ease;
+  /* ============ 顶栏品牌 + 横向导航（左侧栏已移除） ============ */
+  .brand-mini{
+    flex-shrink:0;padding-right:16px;margin-right:2px;border-right:1px solid var(--line)
   }
-  .brand{padding:20px 18px 14px;position:relative}
-  .brand h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.2px;color:var(--accent)}
-  .brand p{margin:7px 0 0;font-size:11.5px;color:var(--tx-dim2)}
-  .collapse{
-    position:absolute;top:22px;right:14px;width:26px;height:26px;border-radius:8px;
-    border:1px solid var(--line);background:#101114;color:var(--tx-dim);
-    display:grid;place-items:center;cursor:pointer;transition:.15s
+  .brand-mini h1{margin:0;font-size:17px;font-weight:800;letter-spacing:.2px;color:var(--accent);white-space:nowrap}
+
+  /* 顶部横向导航条 */
+  .nav.topnav{
+    flex:none;display:flex;flex-direction:row;align-items:center;gap:4px;
+    padding:8px 24px;overflow-x:auto;overflow-y:hidden;
+    background:rgba(9,10,12,.72);backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(255,255,255,.045);
+    position:sticky;top:64px;z-index:29;scrollbar-width:none
   }
-  .collapse:hover{color:#fff;border-color:var(--line-strong)}
-  .nav{flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:3px;overflow-y:auto}
-  .nav a{
-    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;
-    color:#a3a5ab;text-decoration:none;font-size:14px;position:relative;cursor:pointer;
-    transition:background .15s,color .15s;user-select:none
+  .nav.topnav::-webkit-scrollbar{display:none}
+  .nav.topnav a{
+    display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:9px;
+    color:#a3a5ab;text-decoration:none;font-size:13.5px;white-space:nowrap;
+    position:relative;cursor:pointer;user-select:none;
+    transition:background .15s,color .15s
   }
-  .nav a svg{width:18px;height:18px;flex-shrink:0;opacity:.9}
-  .nav a:hover{background:rgba(255,255,255,.045);color:#fff}
-  .nav a.active{
-    background:linear-gradient(90deg,rgba(11,197,160,.15),rgba(11,197,160,.02));
+  .nav.topnav a svg{width:17px;height:17px;flex-shrink:0;opacity:.9}
+  .nav.topnav a:hover{background:rgba(255,255,255,.05);color:#fff}
+  .nav.topnav a.active{
+    background:linear-gradient(180deg,rgba(11,197,160,.16),rgba(11,197,160,.03));
     color:var(--accent);font-weight:600
   }
-  .nav a.active::before{
-    content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;
-    border-radius:0 3px 3px 0;background:var(--accent)
+  .nav.topnav a.active::before{
+    content:"";position:absolute;left:14px;right:14px;bottom:2px;height:2px;
+    border-radius:2px;background:var(--accent)
   }
-  .user{
-    margin:10px 12px 14px;padding:11px 12px;border-radius:12px;
-    background:rgba(255,255,255,.02);border:1px solid var(--line);
-    display:flex;align-items:center;gap:10px;cursor:pointer;transition:.15s
-  }
-  .user:hover{border-color:var(--line-strong);background:rgba(255,255,255,.035)}
-  .avatar{
-    width:34px;height:34px;border-radius:50%;background:#22242a;
-    display:grid;place-items:center;color:var(--tx-dim);flex-shrink:0
-  }
-  .user b{display:block;font-size:13px;color:#d6d7db;font-weight:600}
-  .user span{display:block;font-size:11px;color:var(--tx-dim2);margin-top:2px}
-
-  /* —— 侧栏收缩态（图标栏） —— */
-  body.nav-mini .brand{padding:20px 0 14px;display:flex;flex-direction:column;align-items:center;gap:10px}
-  body.nav-mini .brand h1{
-    width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#0a8f76);
-    color:#06231d;display:grid;place-items:center;font-size:0;letter-spacing:0
-  }
-  body.nav-mini .brand h1::before{content:"O";font-size:17px;font-weight:900}
-  body.nav-mini .brand p{display:none}
-  body.nav-mini .collapse{position:static;transform:rotate(180deg)}
-  body.nav-mini .nav{padding:8px 10px;align-items:center}
-  body.nav-mini .nav a{justify-content:center;padding:11px 0;gap:0}
-  body.nav-mini .nav a .lb{display:none}
-  body.nav-mini .nav a.active::before{left:-10px}
-  body.nav-mini .user{justify-content:center;padding:10px 0;gap:0}
-  body.nav-mini .user > div:last-child{display:none}
 
   /* ============ Main ============ */
   .main{
-    margin-left:calc(var(--sidebar-w) + var(--ai-push));min-width:0;
-    display:flex;flex-direction:column;min-height:100vh;transition:margin-left .26s ease
+    margin-left:0;min-width:0;
+    display:flex;flex-direction:column;min-height:100vh
   }
   .topbar{
     height:64px;position:sticky;top:0;z-index:30;
@@ -136,7 +106,7 @@
     background:rgba(9,10,12,.72);backdrop-filter:blur(14px);
     border-bottom:1px solid rgba(255,255,255,.045)
   }
-  .search{position:relative;flex:1;max-width:660px}
+  .search{position:relative;flex:1;min-width:0;max-width:660px}
   .search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--tx-dim2);width:16px;height:16px}
   .search input{
     width:100%;height:40px;border-radius:999px;border:1px solid var(--line);
@@ -482,6 +452,12 @@
   .tr-foot .d{color:#5a5c62}
   .tr-empty{padding:48px 0;text-align:center;color:var(--tx-dim2);font-size:13.5px}
   @media(max-width:620px){
+    /* 顶栏压缩：品牌 + 搜索 + 四个工具按钮在窄屏挤不下，收紧间距避免横向溢出 */
+    .topbar{gap:8px;padding:0 12px}
+    .brand-mini{padding-right:8px;margin-right:0}
+    .brand-mini h1{font-size:15px}
+    .tools{gap:6px}
+    .icon-btn{width:34px;height:34px}
     /* 顶部有四个按钮（资讯日报/今日趋势/导出竞品/订阅源管理），窄屏允许换行，避免横向溢出 */
     .actions{flex-wrap:wrap;gap:8px;padding-top:0}
     .actions .btn{height:36px;padding:0 13px;font-size:12.5px}
@@ -1112,8 +1088,6 @@
     .ai-panel{z-index:70}
   }
   @media(max-width:860px){
-    :root{--sidebar-w:0px}
-    .sidebar{display:none}
     /* 窄屏把竖排唤起飞标挪到右下角：原先贴左中部会压住正文首屏（速览/卡片标题） */
     .ai-tab{left:auto;right:0;top:auto;bottom:16px;transform:none;
       border-radius:12px 0 0 12px;border-left:1px solid var(--line);border-right:none}
@@ -1171,30 +1145,10 @@
 </head>
 <body>
 <div class="app">
-  <!-- ================= Sidebar ================= -->
-  <aside class="sidebar">
-    <div class="brand">
-      <h1>OTT Insight</h1>
-      <p id="brandSub">当前 128 条资讯已聚合</p>
-      <div class="collapse" title="收起侧栏">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </div>
-    </div>
-    <nav class="nav" id="nav"></nav>
-    <div class="user">
-      <div class="avatar">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      </div>
-      <div>
-        <b>未登录用户</b>
-        <span>点此登录账号</span>
-      </div>
-    </div>
-  </aside>
-
   <!-- ================= Main ================= -->
   <div class="main">
     <header class="topbar">
+      <div class="brand-mini"><h1>OTT Insight</h1></div>
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input id="search" type="text" placeholder="搜索 OTT 资讯 / 竞品 / 政策关键词..." autocomplete="off" />
@@ -1215,6 +1169,8 @@
         </button>
       </div>
     </header>
+    <!-- 横向导航（原左侧栏导航迁移至此） -->
+    <nav class="nav topnav" id="nav"></nav>
 
     <main class="content">
       <!-- Hero -->
@@ -3518,10 +3474,7 @@ async function aiSend(text, isFollow){
 
 document.getElementById('aiTab').onclick = ()=> aiOpen(true);
 document.getElementById('aiClose').onclick = ()=> aiOpen(false);
-/* 侧栏「收起」：导航收成图标栏 */
-const _navCollapse = document.querySelector('.sidebar .collapse');
-if(_navCollapse) _navCollapse.onclick = ()=> document.body.classList.toggle('nav-mini');
-/* 首次进入默认展示看板；助手由左侧导航「AI 助手」进入（全屏打开），不再自动弹出 */
+/* 首次进入默认展示看板；助手由顶部导航「AI 助手」进入（全屏打开），不再自动弹出 */
 document.getElementById('aiNewChat').onclick = ()=> aiNewSession();
 document.getElementById('aiSend').onclick = ()=>{
   const t = document.getElementById('aiInput').value.trim();
