@@ -95,7 +95,13 @@ created: "2026-11-17"
 - 用户要求「把左侧栏整个去掉」，确认方案「导航移到顶部」。
 - `index.html` 已删除整个 `<aside class="sidebar">`，顶栏加 `.brand-mini`（OTT Insight），
   顶栏下方加 `<nav class="nav topnav" id="nav">` 横向标签栏（sticky top:64px，内部横向滚动）。
-- 导航 JS 完全复用（id 仍是 `nav`，7 项：主页/AI 助手/竞品动态/行业数据/热点节目/政策动态/设置）。
+- 导航 JS 完全复用（id 仍是 `nav`）。当前 5 项：主页/竞品动态/行业数据/热点节目/政策动态。
+  2026-11-18 用户框选要求删掉「AI 助手」「设置」两个导航项，以及顶栏右上角「公告」「设置」
+  两个图标按钮——已删除。顶栏现只剩刷新 + 通知两个按钮。
+- AI 助手全屏对话面板：桌面端唯一入口本是导航「AI 助手」，删掉后桌面端无入口；
+  但首页右侧「AI 助手·全站总结」面板（dailySide）仍常驻，日常 AI 总结不受影响。
+  窄屏（≤860px）右下角竖排飞标 `.ai-tab` 仍可打开全屏面板。
+  若要恢复桌面端入口，往 NAV 加回 `{id:'assistant',label:'AI 助手',icon:'bot'}` 即可。
 - **不要删 `--sidebar-w` 变量**：已置 0px，被趋势弹窗（`.modal-trend`）和日报面板定位复用
   （`left:var(--sidebar-w)`、`width:calc(100vw - var(--sidebar-w))`），保留即全宽。
 - 已清理死代码：`body.nav-mini{--sidebar-w:72px}`、`@media(860px){.sidebar{display:none}}`、
