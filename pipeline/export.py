@@ -30,6 +30,18 @@ SRC_COLOR = {
     "量子位": "#a855f7",
 }
 
+def _read_prev_payload():
+    """上一版已发布的 data.js → dict（读失败返回 {}）。供骤降守卫与抓取历史复用。"""
+    p = ROOT / "data.js"
+    if not p.is_file():
+        return {}
+    try:
+        txt = p.read_text(encoding="utf-8")
+        m = re.search(r"=\s*(\{[\s\S]*\})\s*;?\s*$", txt)
+        return json.loads(m.group(1)) if m else {}
+    except Exception:
+        return {}
+
 def prev_snapshot():
     """上一版已发布的 data.js → (条目总数, 原文)，用于数据骤降守卫。"""
     p = ROOT / "data.js"
@@ -43,6 +55,34 @@ def prev_snapshot():
         return int(json.loads(m.group(1))["meta"]["total"]), txt
     except Exception:
         return 0, ""
+
+# 抓取历史：每次真正产出 data.js 时追加一条，最多保留 HISTORY_MAX 条（按 generated_at 去重）
+HISTORY_MAX = 60
+
+def build_fetch_history(meta, sources):
+    """把本次抓取摘要并入历史（新记录置顶，按 generated_at 去重，截断到 HISTORY_MAX）。"""
+    prev = _read_prev_payload()
+    hist = prev.get("fetch_history") or []
+    if not isinstance(hist, list):
+        hist = []
+    policy = [s for s in sources if s.get("type") == "policy"]
+    rec = {
+        "at": meta.get("generated_at", ""),
+        "total": meta.get("total", 0),
+        "with_date": meta.get("with_date", 0),
+        "pending_date": meta.get("pending_date", 0),
+        "source_ok": meta.get("source_ok", 0),
+        "source_total": meta.get("source_total", 0),
+        "policy_ok": sum(1 for s in policy if s.get("status") == "ok"),
+        "policy_total": len(policy),
+        "stale_filtered": meta.get("stale_filtered", 0),
+        "dup_merged": meta.get("dup_merged", 0),
+    }
+    if not rec["at"]:
+        return hist[:HISTORY_MAX]
+    hist = [h for h in hist if (h or {}).get("at") != rec["at"]]
+    hist.insert(0, rec)
+    return hist[:HISTORY_MAX]
 
 
 def build():
@@ -160,6 +200,8 @@ def build():
         "sources": sources,
         "cards": card_list,
     }
+    # 抓取历史：并入本次摘要（读上一版 data.js 已有历史），追加到 payload
+    payload["fetch_history"] = build_fetch_history(payload["meta"], sources)
     js = "/* 由 crawl.py + ai_process.py 自动生成，请勿手改 */\nwindow.__OTT_DATA__ = " + \
          json.dumps(payload, ensure_ascii=False) + ";\n"
     m = payload["meta"]
