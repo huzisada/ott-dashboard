@@ -724,7 +724,21 @@
   .ai-tab svg{width:19px;height:19px}
   .ai-tab span{writing-mode:vertical-rl;letter-spacing:3px;font-size:11.5px;font-weight:600}
   .ai-tab .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red)}
-  /* 桌面端入口已移入左侧导航，「AI 助手」浮标仅在窄屏（侧栏隐藏）时兜底显示 */
+  /* 桌面端入口已移入顶部导航，「AI 助手」浮标仅在窄屏时兜底显示 */
+
+  /* 右栏 AI 全站总结 · 收起态飞标（贴右边缘，独立于已删的「资讯日报」按钮） */
+  .daily-tab{
+    position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:48;
+    width:40px;padding:16px 0;border-radius:12px 0 0 12px;
+    border:1px solid var(--line);border-right:none;
+    background:linear-gradient(180deg,#16181c,#101115);color:var(--accent);
+    display:none;flex-direction:column;align-items:center;gap:10px;cursor:pointer;
+    box-shadow:-14px 0 34px -18px #000;transition:background .15s,width .15s;font-family:inherit
+  }
+  .daily-tab:hover{background:#1b1d22;width:44px}
+  .daily-tab svg{width:18px;height:18px;flex-shrink:0}
+  .daily-tab span{writing-mode:vertical-rl;letter-spacing:3px;font-size:11.5px;font-weight:600}
+  .daily-tab .dot{position:absolute;top:8px;left:8px;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
 
   /* AI 助手：占全屏面板（左侧保留导航栏，其余区域全部铺满） */
   .ai-panel{
@@ -1267,6 +1281,13 @@
   </div>
 </div>
 
+<!-- 右栏 AI 全站总结 · 收起态飞标（贴右边缘，点击重新展开） -->
+<div class="daily-tab" id="dailyTab" title="展开 AI 全站总结">
+  <span class="dot"></span>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 2.4 1 4.4 2.5 5.8L5 22l4.4-2.4A8 8 0 1 0 12 2z"/><circle cx="9" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r=".9" fill="currentColor" stroke="none"/></svg>
+  <span>AI 总结</span>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1757,12 +1778,7 @@ nav.addEventListener('click', e=>{
   if(id==='assistant'){ aiOpen(true); refreshNav(); return; }
   if(document.body.classList.contains('ai-open')) aiOpen(false);
   activeNav = id;
-  // 首页：AI 助手常驻右侧栏并自动总结；用户手动关掉过（DAILY_KEY==='0'）则尊重选择
-  if(id==='home'){
-    if(localStorage.getItem(DAILY_KEY)!=='0') dailyOpen();
-  }else if(!document.getElementById('dailySide').classList.contains('collapsed')){
-    dailyClose(false);
-  }
+  // AI 全站总结与视图切换不再联动：切到任何视图都保持当前展开/收起状态
   render();
 });
 document.getElementById('search').addEventListener('input', e=>{
@@ -3588,12 +3604,14 @@ const DAILY_KEY = 'ott_daily_open';
    不写入偏好，回到首页仍自动展开；只有用户点 ✕ 才真正记住「已关闭」。 */
 function dailyClose(persist){
   document.getElementById('dailySide').classList.add('collapsed');
+  const tab = document.getElementById('dailyTab'); if(tab) tab.style.display='flex'; // 收起后显示右侧飞标
   if(persist !== false) localStorage.setItem(DAILY_KEY,'0');
   try{ refreshNav(); }catch(e){}   // 同步顶部按钮激活态
 }
 function dailyOpen(){
   document.getElementById('aiSide').classList.add('collapsed'); // 与 AI 总结右栏互斥
   document.getElementById('dailySide').classList.remove('collapsed');
+  const tab = document.getElementById('dailyTab'); if(tab) tab.style.display='none'; // 展开后隐藏飞标
   localStorage.setItem(DAILY_KEY,'1');
   dailyBuild();
   try{ refreshNav(); }catch(e){}   // 同步顶部按钮激活态
@@ -3602,6 +3620,11 @@ function dailyToggle(){
   const el = document.getElementById('dailySide');
   el.classList.contains('collapsed') ? dailyOpen() : dailyClose();
 }
+/* 右侧飞标：独立于已删的「资讯日报」按钮，随时展开 AI 全站总结 */
+document.getElementById('dailyTab').onclick = ()=>{
+  if(document.body.classList.contains('ai-open')) aiOpen(false);
+  dailyOpen();
+};
 function _dailyInsight(x){
   const text = x.it.t + ' ' + (x.it.summary||'');
   const cat = x.it.cat || x.card.cat;
@@ -3875,6 +3898,10 @@ document.getElementById('dailyCopy').onclick = ()=>{
 setTimeout(()=>{
   if(activeNav==='home' && localStorage.getItem(DAILY_KEY)!=='0') dailyOpen();
   else if(localStorage.getItem(DAILY_KEY)==='1') dailyOpen();
+  // 收起态：确保右侧飞标可见（用户上次手动收起过）
+  if(document.getElementById('dailySide').classList.contains('collapsed')){
+    const tab = document.getElementById('dailyTab'); if(tab) tab.style.display='flex';
+  }
 }, 0);
 try{ refreshNav(); }catch(err){}
 
