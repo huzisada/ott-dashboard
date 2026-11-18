@@ -69,6 +69,19 @@ created: "2026-11-17"
 `export.py` 骤降守卫（低于上版 60% 则沿用旧 data.js 并打 `::warning::`）。
 竞品卡片是按品牌关键词从媒体源聚合的，不是独立抓取——源挂了竞品会先清零。
 
+## 全站总结分类（用户 2026-11-18 定稿）
+
+- 四类固定为 **政策 / 数据 / 竞品 / 热点**，按此顺序展示。
+- 规则版（前端 `index.html`）：`_dailySectionTitle()` 把 `item.cat` 映射为
+  政策→政策、数据→数据、竞品→竞品、**行业→热点**（其余也归热点）；
+  `AI_SECTION_ORDER=['政策','数据','竞品','热点']`。
+  D 简报式标签配色 `data-cat` 用这四个新值，别改回旧的「行业数据/行业」。
+  `title.split(' / ')` 兼容旧分类名；新名无斜杠时不重复显示标题文字。
+- AI 版（`pipeline/summarize.py` 的 system prompt）：分节标题固定这四类按顺序，
+  无材料则跳过、不自创分类。
+- 数据里 `item.cat` 只有政策/数据/行业/竞品四种；card.cat 是另一套
+  （政策/竞品/数据机构/行业媒体），不要用 card.cat 做总结分类。
+
 ## 每日早报 / 企业微信
 
 - 生成：`python3 pipeline/daily_brief.py --out <path>`（DeepSeek 暂停时为规则版）
@@ -77,11 +90,50 @@ created: "2026-11-17"
   同批数据按 `push_state.json` 去重，`--force` 可重推
 - 未配凭据时静默跳过，不阻断发布；CI 侧注入需要改 `daily.yml`（见铁律 2）
 
+## 顶部横向导航布局（2026-11-18，左侧栏已删除）
+
+- 用户要求「把左侧栏整个去掉」，确认方案「导航移到顶部」。
+- `index.html` 已删除整个 `<aside class="sidebar">`，顶栏加 `.brand-mini`（OTT Insight），
+  顶栏下方加 `<nav class="nav topnav" id="nav">` 横向标签栏（sticky top:64px，内部横向滚动）。
+- 导航 JS 完全复用（id 仍是 `nav`，7 项：主页/AI 助手/竞品动态/行业数据/热点节目/政策动态/设置）。
+- **不要删 `--sidebar-w` 变量**：已置 0px，被趋势弹窗（`.modal-trend`）和日报面板定位复用
+  （`left:var(--sidebar-w)`、`width:calc(100vw - var(--sidebar-w))`），保留即全宽。
+- 已清理死代码：`body.nav-mini{--sidebar-w:72px}`、`@media(860px){.sidebar{display:none}}`、
+  JS 里的 `.sidebar .collapse` 收起逻辑。
+- 移动端 390px 曾横向溢出 18px（根因 `.topbar` 内容挤不下）：
+  在 `@media(max-width:620px)` 收紧 topbar gap/padding、brand-mini 占位、tools gap、icon-btn 尺寸，
+  并给 `.search` 加 `min-width:0`。已验证 1440/1024/390/320 四档零溢出、零 pageerror。
+
+## 热点节目分模块（2026-11-18）
+
+- 顶部导航「热点节目」视图从单一 `HOT_CARD` 改为 `HOT_MODULES_CARDS` 多模块卡。
+- `buildHotModules()` 复用热点筛选/去重逻辑，按 `HOT_MODULES` 里的 `re` 从
+  标题+摘要+来源识别归属；未命中的归「综合热榜」兜底，一条不丢。
+- 当前真实数据（34 条热榜）**不含视频平台字段**（爱奇艺0/优酷2/易视腾1，
+  且这2/1条不在热榜子集里），所以平台模块为空不显示；实际显示的是渠道模块：
+  央视收视 / 卫视收视 / 大屏点播 / 电影点播 / 综艺热榜 / 演员·角色热度。
+- `matchNav()` 的 hot 分支按 `cat==='热点节目'` 放行所有模块卡（含旧 hot_program）。
+- 用户若真要爱奇艺/优酷/易视腾分模块，需先给能标注平台字段的数据源，
+  否则模块会全是空的——不要编造平台归属去填。
+
+## 临时状态：线上挂了假 AI 总结（2026-11-18，待用户确认后撤回）
+
+- 用户要求「放个假数据上去」看 AI 版样式，`pipeline/summary.json` 目前是
+  **编造的演示数据**，带【演示数据·非真实AI生成】标识，四类分节 + 可点角标。
+- 故意**不写 `data_stamp` 字段** → 前端 `llmSummary()` 跳过数据戳校验，
+  CI 每天抓取更新 data.js 也不会让假总结失效；`llm_config.json` 仍 enabled=false，
+  CI 不跑 summarize.py，不会覆盖这份假数据。
+- **撤回方法**：把备份的 `/tmp/summary_before_fake.json` 覆盖回
+  `pipeline/summary.json`（或直接删掉该文件），推送 + 重新 dispatch，
+  前端即回退规则版。备份若丢失，可造一个只有 overview 无 data_stamp 的过渡文件。
+- 用户真要启用 AI 时：给有效 key → summarize.py 生成带真实 data_stamp 的正常总结，
+  会自动覆盖这份假数据。
+
 ## 待办清单（用户尚未确认的开放项）
 
 - 企业微信 Webhook 地址：用户给地址后，从沙箱推一条验证，再谈自动化
 - `pipeline/test_regression.py` 已过期：仍在找 `.item-deep` 和
   `#nav a[data-nav=daily]`，这两个元素已删除；需重写或删除
 - 5 个源仍 `enabled:false`：`mgtv_mango xmedia yhqyg jgtv ystxds`
-- 「去掉」指令歧义未决：截图里可能是整个速览块 / 上方统计条 / 速览灰字行
-- 项目命名：建议「屏观」，未采纳；三处标题（侧栏 / tab / 主标题）未统一
+- 项目命名：建议「屏观」，未采纳（顶栏品牌现为「OTT Insight」）
+- 今日重点速览已彻底删除（用户最终确认），不要再放回
