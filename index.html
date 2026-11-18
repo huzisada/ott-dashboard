@@ -1177,18 +1177,6 @@
           </div>
         </div>
         <div class="actions">
-          <button class="btn btn-ghost" id="btnDaily" title="资讯日报：AI 全站总结（右栏展开 / 收起）">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
-            资讯日报
-          </button>
-          <button class="btn btn-ghost" id="btnTrend">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            今日趋势
-          </button>
-          <button class="btn btn-ghost" id="btnExportComp" title="导出竞品动态（竞品 + 厂商，含可引用摘要与原文链接）">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            导出竞品
-          </button>
           <button class="btn btn-primary" id="btnSources">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
             订阅源管理
@@ -1970,12 +1958,6 @@ function closeTrend(){
   m.classList.remove('show');
   m.setAttribute('aria-hidden','true');
 }
-document.getElementById('btnTrend').onclick = openTrend;
-document.getElementById('btnDaily').onclick = ()=>{
-  if(document.body.classList.contains('ai-open')) aiOpen(false);
-  dailyToggle();
-  refreshNav();
-};
 document.getElementById('trClose').onclick = closeTrend;
 document.getElementById('trendMask').onclick = e=>{ if(e.target.id === 'trendMask') closeTrend(); };
 document.addEventListener('keydown', e=>{
@@ -2157,27 +2139,6 @@ function renderNotif(){
   body.innerHTML = '<div class="notif-list">' + itemsHtml + '</div>';
 }
 document.getElementById('btnSources').onclick = openModal;
-/* 导出竞品动态：汇总竞品 + 厂商动态的真实条目（标题 / 摘要 / 原文链接），复制为 Markdown
-   满足「一键导出竞品动态，自动提炼可引用数据 / 金句」的竞聘辅助需求；全部来自真实抓取，可溯源。 */
-document.getElementById('btnExportComp').onclick = ()=>{
-  const rows=[];
-  DATA.forEach(c=>{
-    if(c.cat!=='竞品' && c.cat!=='厂商动态') return;
-    (c.items||[]).forEach(it=>{
-      const u=(it.u&&it.u!=='#'&&it.u!=='待补充')?it.u:'';
-      const summary=(it.summary&&it.summary!==it.t)?'：'+it.summary:'';
-      rows.push(`- ${it.t}${summary}${u?` ［${u}］`:'（待补充原文链接）'}`);
-    });
-  });
-  if(!rows.length){ toast('暂无可导出的竞品动态'); return; }
-  const md = `# OTT 竞品动态导出\n\n生成于 ${new Date().toLocaleString('zh-CN')} · 共 ${rows.length} 条（均来自真实抓取，可点击溯源）\n\n` + rows.join('\n');
-  const done=()=>toast(`已复制 ${rows.length} 条竞品动态到剪贴板`);
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(md).then(done).catch(()=>toast('复制失败，请检查浏览器剪贴板权限'));
-  } else {
-    toast('当前环境不支持自动复制');
-  }
-};
 function closeSourcesModal(opts={}){
   const r = applySourcesToGrid();
   document.getElementById('modalMask').classList.remove('show');
