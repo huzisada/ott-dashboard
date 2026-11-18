@@ -128,6 +128,26 @@ created: "2026-11-17"
   在 `@media(max-width:620px)` 收紧 topbar gap/padding、brand-mini 占位、tools gap、icon-btn 尺寸，
   并给 `.search` 加 `min-width:0`。已验证 1440/1024/390/320 四档零溢出、零 pageerror。
 
+## 抓取记录抽屉（2026-11-18）
+
+- 用户要求把标题下的抓取状态行（`今天是X / 政策源 / 数据源 / 抓取于`）挪到顶栏箭头处，
+  做成「记录每次抓取的历史面板」。方案：管道侧累积历史 + 前端读 `data.js` 展示，
+  而非前端轮询记录（页面不开会漏记）。
+- **管道侧**：`pipeline/export.py` 的 `build_fetch_history(meta, sources)` 把本次摘要并入历史，
+  写入 `payload['fetch_history']`（最多 `HISTORY_MAX=60` 条，按 `generated_at` 去重，新的置顶）。
+  读上一版历史的来源是**仓库根 `data.js`**（`_read_prev_payload()`），因为 `run_pipeline.sh`
+  导出后才 `cp` 到根、CI 会提交根 `data.js`——所以跨次能累积。每条字段：
+  `at / total / with_date / pending_date / source_ok / source_total / policy_ok / policy_total / stale_filtered / dup_merged`。
+  骤降守卫触发时沿用上一版原文，本次不入历史（符合「抓取失败不算一次成功抓取」）。
+- **前端**：删了 hero 下的 `.meta` 状态行（连同 `renderDataStatus()` / `hoursSince()` 死代码）。
+  顶栏 tools 加 `#btnFetchLog`（时钟图标，在刷新按钮左侧）；抽屉 `#fetchLogPanel`
+  复用 `.notif-panel` 骨架 + `body.fetchlog-open` 控制显隐（z-index:61 盖过通知）。
+  `renderFetchLog()` 读 `window.__OTT_DATA__.fetch_history` 渲染，每条显示完整时间、
+  条数、源/政策源状态（异常橙色 `.warn`）、明细；首条标「最新」。
+  与通知抽屉互斥：开记录关通知，点铃铛关记录（`btnBell` 的 addEventListener）。
+- 本地预览：`pipeline/data/data.js` 和根 `data.js` 都已注入初始 1 条历史（2026-11-15 那批）。
+  以后每次 CI 抓取会继续累积。验证过 1440/390 零溢出零报错。
+
 ## 热点节目分模块（2026-11-18）
 
 - 顶部导航「热点节目」视图从单一 `HOT_CARD` 改为 `HOT_MODULES_CARDS` 多模块卡。
