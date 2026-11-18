@@ -1613,6 +1613,61 @@ function buildHotCard(){
   };
 }
 const HOT_CARD = buildHotCard();
+
+/* 热点节目·按平台/渠道分模块：同一批真实热榜条目，按可识别的归属拆成多个卡片。
+   优先按视频平台（爱奇艺/优酷/易视腾…）识别——但当前数据标题/摘要不含平台字段，
+   故实际按播出渠道分：央视收视 / 卫视收视 / 大屏点播 / 电影点播 / 综艺 / 剧集观察 / 演员·角色热度。
+   全部来自真实条目，一条不编造；某模块无命中则不生成。 */
+const HOT_MODULES = [
+  {id:'hot_plat_iqiyi', name:'爱奇艺 · 热点', short:'奇', color:'#00be13', cat:'热点节目', re:/爱奇艺|银河奇异果|iQIYI/i},
+  {id:'hot_plat_youku', name:'优酷 · 热点',   short:'酷', color:'#ff6a00', cat:'热点节目', re:/优酷|酷喵/i},
+  {id:'hot_plat_yisht', name:'易视腾 · 热点', short:'易', color:'#4a9bff', cat:'热点节目', re:/易视腾/i},
+  {id:'hot_plat_tencent', name:'腾讯视频 · 热点', short:'腾', color:'#ffb400', cat:'热点节目', re:/腾讯视频|极光TV/i},
+  {id:'hot_plat_mango', name:'芒果TV · 热点', short:'芒', color:'#ff5c8a', cat:'热点节目', re:/芒果TV|芒果超媒/i},
+  {id:'hot_cctv',  name:'央视收视榜',   short:'央', color:'#e5484d', cat:'热点节目', re:/央视|CCTV/i},
+  {id:'hot_sat',   name:'卫视收视榜',   short:'卫', color:'#ff8a3d', cat:'热点节目', re:/卫视/i},
+  {id:'hot_vod',   name:'大屏点播榜',   short:'点', color:'#b98cff', cat:'热点节目', re:/大屏点播|点播月冠|点播榜/i},
+  {id:'hot_movie', name:'电影点播榜',   short:'影', color:'#e0b341', cat:'热点节目', re:/电影.*点播|电影大屏/i},
+  {id:'hot_variety', name:'综艺热榜',   short:'综', color:'#38d6a8', cat:'热点节目', re:/综艺|歌手|你好星期六|现在就出发|心动.*信号|地球超新鲜/i},
+  {id:'hot_role',  name:'演员·角色热度', short:'角', color:'#6aa9ff', cat:'热点节目', re:/角色热度|期待指数|演员.*榜|待播|在播剧/i}
+];
+function buildHotModules(){
+  // 复用 buildHotCard 的筛选/去重逻辑，拿到全部真实热榜条目（含来源）
+  const seen = new Set(); const rows = [];
+  DATA_ALL.forEach(c => (c.items||[]).forEach(it => {
+    if(!HOT_RE.test(it.t) || HOT_EXCLUDE.test(it.t)) return;
+    const key = (it.u && it.u!=='#' && it.u!=='待补充') ? it.u : it.t;
+    if(seen.has(key)) return;
+    seen.add(key);
+    rows.push(it);
+  }));
+  rows.sort((a,b)=>(b.h||0)-(a.h||0));
+  const cards = []; const covered = new Set();
+  HOT_MODULES.forEach(m=>{
+    const items = rows.filter(it=>{
+      const text = (it.t||'')+' '+(it.summary||'')+' '+(hotSourceName(it.id)||'');
+      return m.re.test(text);
+    });
+    if(!items.length) return;
+    items.forEach(it=>covered.add(it.u||it.t));   // 按全部命中记账，不受展示上限影响
+    cards.push({
+      id:m.id, name:m.name, cat:'热点节目', type:'media', agg:true,
+      c:m.color, s:m.short,
+      time:`全站热榜 · 命中 ${items.length} 条 · 按热度排序`,
+      items:items.slice(0,15)
+    });
+  });
+  // 兜底：未被任何模块命中的，归入「综合热榜」，保证一条不丢
+  const rest = rows.filter(it=>!covered.has(it.u||it.t));
+  if(rest.length){
+    cards.push({
+      id:'hot_misc', name:'综合热榜', short:'热', color:'#ff7a59', cat:'热点节目', type:'media', agg:true,
+      time:`全站热榜 · ${rest.length} 条 · 按热度排序`, items:rest.slice(0,15)
+    });
+  }
+  return cards;
+}
+const HOT_MODULES_CARDS = buildHotModules();
 function hotSourceName(id){
   for(const c of DATA_ALL) if((c.items||[]).some(x=>x.id===id)) return c.name;
   return '';
@@ -1662,7 +1717,7 @@ function syncDailyBtn(){
 }
 function matchNav(card){
   if(activeNav==='home') return true;
-  if(activeNav==='hot') return card.id==='hot_program';
+  if(activeNav==='hot') return card.cat==='热点节目' || card.id==='hot_program';
   if(activeNav==='competitor') return card.cat==='竞品' || card.cat==='厂商动态';
   if(activeNav==='data') return card.cat==='数据机构'||card.cat==='报告';
   if(activeNav==='policy') return card.cat==='政策';
@@ -1688,7 +1743,7 @@ function render(){
   }
 
   let base;
-  if(activeNav==='hot') base = [...DATA, HOT_CARD];
+  if(activeNav==='hot') base = [...DATA, ...HOT_MODULES_CARDS];
   else if(activeNav==='home') base = [HOT_CARD, ...DATA];
   else if(activeNav==='competitor') base = DATA;
   else base = DATA;
