@@ -106,6 +106,12 @@ created: "2026-11-17"
   （`left:var(--sidebar-w)`、`width:calc(100vw - var(--sidebar-w))`），保留即全宽。
 - 已清理死代码：`body.nav-mini{--sidebar-w:72px}`、`@media(860px){.sidebar{display:none}}`、
   JS 里的 `.sidebar .collapse` 收起逻辑。
+- 2026-11-18 用户框选要求删掉 hero 区三个按钮：「资讯日报」(`btnDaily`)、「今日趋势」
+  (`btnTrend`)、「导出竞品」(`btnExportComp`)。已删除 DOM 及三处 `.onclick` 绑定
+  （`openTrend` / `dailyToggle` / 导出剪贴板逻辑留作死代码无害；`syncDailyBtn` 有 `if(!b)return`
+  保护可保留）。hero `.actions` 现只剩「订阅源管理」(`btnSources`)。
+  注意：删掉 `btnDaily` 后右栏全站总结只能靠 `dailyOpen()` 默认展开 + 右栏自带控件操作，
+  已无顶部按钮做展开/收起切换。
 - 移动端 390px 曾横向溢出 18px（根因 `.topbar` 内容挤不下）：
   在 `@media(max-width:620px)` 收紧 topbar gap/padding、brand-mini 占位、tools gap、icon-btn 尺寸，
   并给 `.search` 加 `min-width:0`。已验证 1440/1024/390/320 四档零溢出、零 pageerror。
