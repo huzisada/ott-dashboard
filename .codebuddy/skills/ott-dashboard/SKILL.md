@@ -110,8 +110,12 @@ created: "2026-11-17"
   (`btnTrend`)、「导出竞品」(`btnExportComp`)。已删除 DOM 及三处 `.onclick` 绑定
   （`openTrend` / `dailyToggle` / 导出剪贴板逻辑留作死代码无害；`syncDailyBtn` 有 `if(!b)return`
   保护可保留）。hero `.actions` 现只剩「订阅源管理」(`btnSources`)。
-  注意：删掉 `btnDaily` 后右栏全站总结只能靠 `dailyOpen()` 默认展开 + 右栏自带控件操作，
-  已无顶部按钮做展开/收起切换。
+- **AI 全站总结右侧飞标（2026-11-18）**：删了 `btnDaily` 后，给右栏总结加了独立飞标
+  `#dailyTab`（CSS `.daily-tab`，fixed right:0、竖排「AI 总结」+绿点）。
+  `dailyClose()` 里显示飞标、`dailyOpen()` 里隐藏飞标；飞标 `onclick=dailyOpen()`。
+  导航切换处已删除「切非首页自动 dailyClose(false)」的联动，切任何视图都保持当前展开/收起态。
+  初始化 `setTimeout` 里补了收起态显示飞标。注意别把 `#dailyTab` 和窄屏的 `.ai-tab`
+  （全屏 AI 助手飞标，右下角）搞混——两者上下分开、功能不同。
 - 移动端 390px 曾横向溢出 18px（根因 `.topbar` 内容挤不下）：
   在 `@media(max-width:620px)` 收紧 topbar gap/padding、brand-mini 占位、tools gap、icon-btn 尺寸，
   并给 `.search` 加 `min-width:0`。已验证 1440/1024/390/320 四档零溢出、零 pageerror。
