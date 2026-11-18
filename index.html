@@ -1072,10 +1072,10 @@
     border-radius:20px;vertical-align:middle
   }
   .ai-side .seg-tag[data-cat="政策"]{color:#e0b341;background:rgba(224,179,65,.12);border:1px solid rgba(224,179,65,.28)}
-  .ai-side .seg-tag[data-cat="行业数据"]{color:#6aa9ff;background:rgba(106,169,255,.12);border:1px solid rgba(106,169,255,.28)}
+  .ai-side .seg-tag[data-cat="数据"]{color:#6aa9ff;background:rgba(106,169,255,.12);border:1px solid rgba(106,169,255,.28)}
   .ai-side .seg-tag[data-cat="竞品"]{color:#ff8a6b;background:rgba(255,138,107,.12);border:1px solid rgba(255,138,107,.28)}
-  .ai-side .seg-tag[data-cat="行业"]{color:#b98cff;background:rgba(185,140,255,.12);border:1px solid rgba(185,140,255,.28)}
-  .ai-side .seg-tag:not([data-cat="政策"]):not([data-cat="行业数据"]):not([data-cat="竞品"]):not([data-cat="行业"]){color:var(--tx-dim);background:rgba(255,255,255,.05);border:1px solid var(--line)}
+  .ai-side .seg-tag[data-cat="热点"]{color:#b98cff;background:rgba(185,140,255,.12);border:1px solid rgba(185,140,255,.28)}
+  .ai-side .seg-tag:not([data-cat="政策"]):not([data-cat="数据"]):not([data-cat="竞品"]):not([data-cat="热点"]){color:var(--tx-dim);background:rgba(255,255,255,.05);border:1px solid var(--line)}
   body.sum-D .ai-side .sum-item{padding:8px 0 9px;border:none;border-bottom:1px solid var(--line);border-radius:0;background:none}
   body.sum-D .ai-side .seg-items{gap:0}
   body.sum-D .ai-side .si-sum{display:none}
@@ -3657,11 +3657,11 @@ function _dailyInsight(x){
   return '行业趋势信号，可纳入进行业动态素材库，交叉验证后再引用。';
 }
 function _dailySectionTitle(cat){
-  return cat==='政策' ? '政策 / 监管动态'
-    : (cat==='数据') ? '行业数据 / 报告'
-    : (cat==='竞品'||cat==='厂商动态') ? '竞品 / 厂商动态'
-    : (cat==='行业') ? '行业动态'
-    : '其他动态';
+  return cat==='政策' ? '政策'
+    : (cat==='数据') ? '数据'
+    : (cat==='竞品'||cat==='厂商动态') ? '竞品'
+    : (cat==='行业') ? '热点'
+    : '热点';
 }
 /* ============ 日期精度分档 ============
    抓取管道对部分信源只能解析到「年月」（栏目页 URL 内嵌 /202611/），
@@ -3751,7 +3751,7 @@ function aiHomePool(){
   });
   return list;
 }
-const AI_SECTION_ORDER = ['政策 / 监管动态','行业数据 / 报告','竞品 / 厂商动态','行业动态','其他动态'];
+const AI_SECTION_ORDER = ['政策','数据','竞品','热点'];
 /* 全站总结版式：D 简报式(默认) / A 图标分节 / B 今日焦点 / C 极简速读。改这一行即可换版。 */
 const SUM_STYLE = 'D';
 const AI_PER_SECTION = 5;
@@ -3849,7 +3849,8 @@ function dailyBuild(){
     const more = rest > 0
       ? `<div class="ai-more">另有 ${rest} 条未展开 · 可在左侧对应卡片内滚动查看</div>` : '';
     const tag = title.split(' / ')[0];
-    const restTitle = title.includes(' / ') ? title.split(' / ').slice(1).join(' / ') : title;
+    const hasSlash = title.includes(' / ');
+    const restTitle = hasSlash ? title.split(' / ').slice(1).join(' / ') : '';
     return `<div class="seg">
       <h5><i>${secNo++}</i><span class="seg-tag" data-cat="${escapeHtml(tag)}">${escapeHtml(tag)}</span>${escapeHtml(restTitle)}<em class="seg-n">${xs.length} 条</em></h5>
       <div class="seg-items">${xs.slice(0, AI_PER_SECTION).map(itemHtml).join('')}</div>
