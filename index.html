@@ -1732,15 +1732,16 @@ function matchKw(item, card){
   const k = keyword.toLowerCase();
   return (item.t.toLowerCase().includes(k)) || card.name.toLowerCase().includes(k) || card.cat.toLowerCase().includes(k);
 }
-/* 主体卡片按顶部导航的分类顺序排列：竞品动态 → 行业数据 → 热点节目 → 政策动态。
-   行业媒体在导航里没有独立分类，兜底放最后。组内保持 data.js 原顺序（稳定排序）。 */
+/* 主体卡片排序：行业媒体 → 竞品动态 → 行业数据 → 热点节目 → 政策动态。
+   行业媒体放最前，组内保持 data.js 原顺序（稳定排序）。 */
 function cardCatRank(c){
   const cat = c.cat || '';
-  if(cat==='竞品' || cat==='厂商动态') return 0;   // 竞品动态
-  if(cat==='数据机构' || cat==='报告') return 1;    // 行业数据
-  if(cat==='热点节目' || c.agg) return 2;           // 热点节目（含全站聚合热榜卡）
-  if(cat==='政策') return 3;                        // 政策动态
-  return 4;                                         // 行业媒体等 → 兜底置后
+  if(cat==='行业媒体') return 0;                    // 媒体放最前
+  if(cat==='竞品' || cat==='厂商动态') return 1;    // 竞品动态
+  if(cat==='数据机构' || cat==='报告') return 2;     // 行业数据
+  if(cat==='热点节目' || c.agg) return 3;            // 热点节目（含全站聚合热榜卡）
+  if(cat==='政策') return 4;                         // 政策动态
+  return 5;                                          // 其他兜底置后
 }
 
 function render(){
@@ -1763,7 +1764,7 @@ function render(){
   else base = DATA;
   let cards = base.filter(matchNav).map(c=>({...c, items:c.items.filter(it=>matchKw(it,c))}))
                    .filter(c=>c.items.length>0);
-  // 按顶部导航的分类顺序展示：竞品动态 → 行业数据 → 热点节目 → 政策动态 → 行业媒体
+  // 分类排序：行业媒体 → 竞品动态 → 行业数据 → 热点节目 → 政策动态
   cards.sort((a,b)=> cardCatRank(a) - cardCatRank(b));
 
   if(cards.length===0){
