@@ -1191,6 +1191,34 @@
     position:static;max-height:none;height:auto;overflow:visible;
     animation:none
   }
+  /* 右侧 AI 总结头部：参照「点点 ai」样式（深色适配）
+     圆角渐变图标 + 标题 + 浅青 ai 小标签 + 浅灰胶囊气泡 + 双头像 */
+  #dailySide .side-av{
+    width:30px;height:30px;border-radius:9px;
+    background:linear-gradient(140deg,#8ff3d8,#0BC5A0 55%,#079a7d);
+    color:#06231d;box-shadow:0 3px 12px rgba(11,197,160,.28)
+  }
+  #dailySide .side-av svg{width:18px;height:18px}
+  #dailySide .side-nm{display:inline-flex;align-items:center;gap:7px;min-width:0}
+  #dailySide .side-nm-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #dailySide .ai-mini-tag{
+    flex-shrink:0;font-size:10px;line-height:1;padding:3px 6px;border-radius:6px;
+    background:rgba(11,197,160,.15);color:#5fe0c0;border:1px solid rgba(11,197,160,.32);
+    font-weight:700;letter-spacing:.4px
+  }
+  #dailySide .side-meta{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    border-radius:999px;padding:8px 12px;font-size:13px;color:#d6d7db;
+    display:flex;align-items:center;gap:8px;flex-wrap:nowrap
+  }
+  #dailySide .side-meta #dailyMeta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  #dailySide .bubble-avs{display:inline-flex;align-items:center;flex-shrink:0;padding-left:2px}
+  #dailySide .bubble-avs i{
+    width:18px;height:18px;border-radius:50%;display:grid;place-items:center;
+    font-style:normal;font-size:10px;border:1.5px solid #17181c;margin-left:-5px
+  }
+  #dailySide .bubble-avs i.av1{background:linear-gradient(135deg,#3b82f6,#0ea5e9)}
+  #dailySide .bubble-avs i.av2{background:linear-gradient(135deg,#f59e0b,#f472b6)}
 </style>
 </head>
 <body>
@@ -1291,23 +1319,21 @@
         <div class="rcol">
         <aside class="ai-side collapsed" id="dailySide">
           <div class="side-head">
-            <div class="side-av">AI</div>
-            <div class="side-nm">AI 助手 · 全站总结</div>
+            <div class="side-av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0-6 6c0 2.3 1 4.3 2.6 5.6L8 18h8l-.6-3.4A6 6 0 0 0 18 9a6 6 0 0 0-6-6z"/><path d="M10 21h4"/></svg></div>
+            <div class="side-nm"><span class="side-nm-text">AI 助手 · 全站总结</span><span class="ai-mini-tag">ai</span></div>
             <div class="side-tools">
-              <button id="dailyRefresh" title="立即重新生成总结">
+              <button id="dailyRefresh" class="ic" title="立即重新生成总结">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                刷新
               </button>
-              <button id="dailyCopy" title="复制总结">
+              <button id="dailyCopy" class="ic" title="复制总结">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                复制
               </button>
               <button id="dailyCollapse" class="ic" title="收起">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
           </div>
-          <div class="side-meta"><span class="side-ai-ic">AI</span><span id="dailyMeta">基于最新抓取数据自动生成</span></div>
+          <div class="side-meta"><span id="dailyMeta">AI 总结生成中…</span><span class="bubble-avs"><i class="av1">👤</i><i class="av2">🤖</i></span></div>
           <div id="dailyBody"><div class="empty" style="padding:14px 4px">总结生成中…</div></div>
         </aside>
         </div>
@@ -3841,12 +3867,17 @@ function renderLLMDaily(S, body, meta){
   const t = (S.generated_at||'').slice(5,16).replace('T',' ');
   const focus = summaryFocus();
   if(dd) dd.textContent = t ? t.slice(0,5) : '—';
-  // 右栏标题跟随视图：主页=全站总结，分类=对应专题总结
-  const nm = document.querySelector('#dailySide .side-nm');
+  // 右栏标题跟随视图：主页=全站总结，分类=对应专题总结（只改文字，保留 ai 小标签）
+  const nm = document.querySelector('#dailySide .side-nm-text');
   if(nm) nm.textContent = focus ? `AI 助手 · ${focus.label}总结` : 'AI 助手 · 全站总结';
-  if(meta) meta.textContent = focus
-    ? `${focus.label}专题 · 覆盖 ${S.n_pool} 条 · 正文 ${S.n_candidates} 条 · ${t}`
-    : `DeepSeek 总结 · 覆盖 ${S.n_pool} 条 · 正文 ${S.n_candidates} 条（${S.n_fulltext||0} 条全文） · ${t}`;
+  // 胶囊主文案贴近参考图「ai总结N篇生成」，详细统计放 title 里 hover 可见
+  if(meta){
+    const n = S.n_pool || S.n_candidates || 0;
+    meta.textContent = `AI 总结 ${n} 篇资讯生成`;
+    meta.title = focus
+      ? `${focus.label}专题 · 覆盖 ${S.n_pool} 条 · 正文 ${S.n_candidates} 条 · ${t}`
+      : `DeepSeek 总结 · 覆盖 ${S.n_pool} 条 · 正文 ${S.n_candidates} 条（${S.n_fulltext||0} 条全文） · ${t}`;
+  }
 
   const refs = {};
   (S.refs||[]).forEach(r=>{ refs[r.idx] = r; });
@@ -3899,7 +3930,7 @@ function dailyBuild(){
   }
   let pool = aiHomePool();
   const focusR = summaryFocus();
-  const nmR = document.querySelector('#dailySide .side-nm');
+  const nmR = document.querySelector('#dailySide .side-nm-text');
   if(nmR) nmR.textContent = focusR ? `AI 助手 · ${focusR.label}总结` : 'AI 助手 · 全站总结';
   if(focusR) pool = pool.filter(x=>_dailySectionTitle(x.it.cat || x.card.cat)===focusR.sec);
   if(!pool.length){ body.innerHTML = '<div class="empty">该分类暂无可展示的资讯条目</div>'; return; }
