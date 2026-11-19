@@ -144,7 +144,9 @@ created: "2026-11-17"
   复用 `.notif-panel` 骨架 + `body.fetchlog-open` 控制显隐（z-index:61 盖过通知）。
   `renderFetchLog()` 读 `window.__OTT_DATA__.fetch_history` 渲染，每条显示完整时间、
   条数、源/政策源状态（异常橙色 `.warn`）、明细；首条标「最新」。
-  与通知抽屉互斥：开记录关通知，点铃铛关记录（`btnBell` 的 addEventListener）。
+  两个抽屉互不干涉（2026-11-19 按用户要求撤销互斥）：最初加过「开记录关通知 +
+  `btnBell.addEventListener` 点铃铛关记录」，用户觉得铃铛被改、要求回退，已全部移除。
+  现在铃铛走原生 `btnBell.onclick`（toggle notif-open + renderNotif + notifMarkSeen），抓取记录独立开关。
 - 本地预览：`pipeline/data/data.js` 和根 `data.js` 都已注入初始 1 条历史（2026-11-15 那批）。
   以后每次 CI 抓取会继续累积。验证过 1440/390 零溢出零报错。
 
