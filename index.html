@@ -2083,8 +2083,6 @@ function renderFetchLog(){
   }).join('');
 }
 function openFetchLog(){
-  document.body.classList.remove('notif-open');
-  document.getElementById('notifPanel').setAttribute('aria-hidden','true');
   document.body.classList.add('fetchlog-open');
   document.getElementById('fetchLogPanel').setAttribute('aria-hidden','false');
   renderFetchLog();
@@ -2097,10 +2095,6 @@ document.getElementById('btnFetchLog').onclick = ()=>{
   document.body.classList.contains('fetchlog-open') ? closeFetchLog() : openFetchLog();
 };
 document.getElementById('fetchLogClose').onclick = closeFetchLog;
-/* 点铃铛时顺手关掉抓取记录，避免两个抽屉叠加 */
-document.getElementById('btnBell').addEventListener('click', ()=>{
-  if(document.body.classList.contains('notif-open')) closeFetchLog();
-});
 
 document.getElementById('notifRefresh').onclick = ()=>{
   const btn = document.getElementById('notifRefresh');
