@@ -125,11 +125,6 @@
   .icon-btn svg{width:17px;height:17px}
   .icon-btn.spinning{pointer-events:none;color:var(--accent);border-color:rgba(11,197,160,.45);background:rgba(11,197,160,.08)}
   .icon-btn.spinning svg{animation:spin .8s linear infinite}
-  .badge{
-    position:absolute;top:-3px;right:-3px;background:var(--red);color:#fff;font-size:10px;
-    min-width:16px;height:16px;border-radius:999px;display:grid;place-items:center;
-    padding:0 4px;font-weight:700;border:2px solid var(--bg);line-height:1;z-index:5
-  }
 
   .content{padding:26px 30px 60px;flex:1}
 
@@ -268,7 +263,7 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  /* ============ 通知抽屉（右侧滑出，左侧标题栏含刷新按钮） ============ */
+  /* ============ 右侧抽屉骨架（抓取记录复用） ============ */
   .notif-panel{
     position:fixed;top:0;right:0;width:380px;height:100vh;z-index:60;
     background:linear-gradient(180deg,#17181c,#101115);
@@ -278,22 +273,10 @@
     display:flex;flex-direction:column;
     box-shadow:-20px 0 60px -30px #000
   }
-  body.notif-open .notif-panel{transform:translateX(0)}
   .notif-head{
     display:flex;align-items:center;gap:10px;
     padding:14px 14px;border-bottom:1px solid var(--line);flex-shrink:0
   }
-  .notif-head .refresh{
-    display:inline-flex;align-items:center;gap:6px;
-    height:32px;padding:0 12px;border-radius:9px;
-    background:rgba(11,197,160,.1);border:1px solid rgba(11,197,160,.32);
-    color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;
-    font-family:inherit;transition:.15s;flex-shrink:0
-  }
-  .notif-head .refresh:hover{background:rgba(11,197,160,.18)}
-  .notif-head .refresh:disabled{opacity:.6;cursor:wait}
-  .notif-head .refresh svg{width:14px;height:14px;transition:transform .4s}
-  .notif-head .refresh.loading svg{animation:spin 1s linear infinite}
   @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
   .notif-head .title{
     font-size:15.5px;font-weight:700;color:#e9eaee;flex:1;
@@ -305,54 +288,12 @@
     background:transparent;border:1px solid var(--line);color:var(--tx-mid);cursor:pointer;flex-shrink:0
   }
   .notif-head .close:hover{background:rgba(255,255,255,.06);color:#fff}
-  .notif-tab-row{display:flex;gap:6px;padding:10px 14px 6px;border-bottom:1px solid var(--line);flex-shrink:0}
-  .notif-tab{
-    flex:1;background:transparent;border:1px solid var(--line);border-radius:8px;
-    color:var(--tx-dim);font-size:12px;padding:7px 0;cursor:pointer;
-    font-family:inherit;font-weight:600;transition:.15s
-  }
-  .notif-tab:hover{color:var(--tx-mid)}
-  .notif-tab.on{background:var(--accent-soft);border-color:rgba(11,197,160,.4);color:var(--accent)}
   .notif-body{flex:1;overflow-y:auto;padding:0}
-  .notif-list{padding:2px 0 18px}
-  .notif-item{
-    display:flex;gap:12px;align-items:flex-start;
-    padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.06)
-  }
-  .notif-item:last-child{border-bottom:0}
-  .notif-item:hover{background:rgba(255,255,255,.018)}
-  .notif-dot{
-    flex-shrink:0;width:9px;height:9px;border-radius:50%;margin-top:8px;
-    background:#8b8f98;border:1px solid rgba(255,255,255,.18)
-  }
-  .notif-item.unread .notif-dot{background:var(--accent);border-color:transparent;box-shadow:0 0 8px rgba(11,197,160,.75)}
-  .notif-info{flex:1;min-width:0;font-size:13.5px;color:#e3e4e8;line-height:1.48;font-weight:600}
-  .notif-info .lbl{
-    display:inline-block;padding:2px 7px;margin-right:8px;border-radius:5px;
-    font-size:10.5px;font-weight:600;border:1px solid var(--line);
-    color:var(--tx-dim);background:rgba(255,255,255,.02);
-    vertical-align:2px;letter-spacing:.2px
-  }
-  .notif-info .lbl.cat-policy{color:#fbbf24;border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.08)}
-  .notif-info .lbl.cat-vendor{color:#60a5fa;border-color:rgba(96,165,250,.5);background:rgba(96,165,250,.08)}
-  .notif-info .lbl.cat-drama{color:#f472b6;border-color:rgba(244,114,182,.5);background:rgba(244,114,182,.08)}
-  .notif-info .lbl.cat-integrated{color:#a78bfa;border-color:rgba(167,139,250,.5);background:rgba(167,139,250,.08)}
-  .notif-info .lbl.cat-system{
-    color:#c4c6cc;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.05)
-  }
-  .notif-info .ttl{color:#e3e4e8;text-decoration:none;transition:color .15s}
-  .notif-info .ttl:hover{color:var(--accent)}
-  .notif-info .ts{display:block;margin-top:7px;font-size:11.5px;color:#5f6167;font-weight:500}
-  .notif-empty{
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:80px 20px;color:var(--tx-dim2);text-align:center;gap:10px;font-size:13px
-  }
-  .notif-empty svg{width:36px;height:36px;opacity:.4}
   @media(max-width:860px){
     .notif-panel{width:100vw;border-left:0}
   }
 
-  /* ============ 抓取记录抽屉（复用通知抽屉骨架） ============ */
+  /* ============ 抓取记录抽屉（复用右侧抽屉骨架） ============ */
   body.fetchlog-open .fetchlog-panel{transform:translateX(0)}
   .fetchlog-panel{z-index:61}
   .fetchlog-tip{
@@ -1238,10 +1179,6 @@
         <button class="icon-btn" id="btnRefresh" title="重新拉取数据" aria-label="重新拉取数据">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         </button>
-        <button class="icon-btn" id="btnBell" title="通知">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span class="badge">2</span>
-        </button>
       </div>
     </header>
     <!-- 横向导航（原左侧栏导航迁移至此） -->
@@ -1351,27 +1288,6 @@
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
-
-<!-- 通知抽屉（顶栏铃铛打开，标题栏左侧含"刷新"按钮） -->
-<div class="notif-panel" id="notifPanel" aria-hidden="true">
-  <div class="notif-head">
-    <button class="refresh" id="notifRefresh" title="重新拉取通知">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      刷新
-    </button>
-    <div class="title">通知<span class="cnt" id="notifCnt">· 0 条</span></div>
-    <button class="close" id="notifClose" title="关闭">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="notif-tab-row">
-    <button class="notif-tab on" data-f="all">全部</button>
-    <button class="notif-tab" data-f="unread">未读</button>
-    <button class="notif-tab" data-f="policy">政策</button>
-    <button class="notif-tab" data-f="vendor">厂商</button>
-  </div>
-  <div class="notif-body" id="notifBody"></div>
-</div>
 
 <!-- 抓取记录抽屉（顶栏时钟图标打开，记录每次抓取的时间/条数/源状态，累积可追溯） -->
 <div class="notif-panel fetchlog-panel" id="fetchLogPanel" aria-hidden="true">
@@ -2067,21 +1983,6 @@ document.getElementById('trendMask').onclick = e=>{ if(e.target.id === 'trendMas
 document.addEventListener('keydown', e=>{
   if(e.key === 'Escape' && document.getElementById('trendMask').classList.contains('show')) closeTrend();
 });
-document.getElementById('btnBell').onclick = ()=>{
-  document.body.classList.toggle('notif-open');
-  const open = document.body.classList.contains('notif-open');
-  document.getElementById('notifPanel').setAttribute('aria-hidden', open?'false':'true');
-  if(open){
-    renderNotif();            // 先按当前状态渲染，让「未读」tab 能看到新内容
-    notifMarkSeen();          // 打开即视为已读（角标清零，圆点在下次渲染时变灰）
-    syncBellBadge();
-  }
-};
-document.getElementById('notifClose').onclick = ()=>{
-  document.body.classList.remove('notif-open');
-  document.getElementById('notifPanel').setAttribute('aria-hidden','true');
-};
-
 /* ============ 抓取记录抽屉（读取 data.js 中累积的 fetch_history） ============ */
 function fmtFetchFull(iso){
   const d = parseStamp(iso); if(!d) return '—';
@@ -2135,167 +2036,6 @@ document.getElementById('btnFetchLog').onclick = ()=>{
 };
 document.getElementById('fetchLogClose').onclick = closeFetchLog;
 
-document.getElementById('notifRefresh').onclick = ()=>{
-  const btn = document.getElementById('notifRefresh');
-  if(btn.disabled) return;
-  btn.classList.add('loading'); btn.disabled = true;
-  // 模拟拉取过程 —— 800ms 后用全新时间戳重新组装通知
-  setTimeout(()=>{
-    NOTIFS = buildNotifs(true);
-    renderNotif();
-    syncBellBadge();
-    btn.classList.remove('loading'); btn.disabled = false;
-    toast('通知已刷新 · 共 ' + NOTIFS.length + ' 条');
-  }, 800);
-};
-document.querySelectorAll('.notif-tab').forEach(b=>{
-  b.onclick = ()=>{
-    document.querySelectorAll('.notif-tab').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    notifFilter = b.dataset.f;
-    renderNotif();
-  };
-});
-
-/* ============ 通知数据 + 渲染 ============ */
-const NOTIF_CAT_LBL = {
-  'policy':'政策','vendor':'厂商动态','drama':'短剧观察',
-  'integrated':'一体化电视','data':'行业数据','system':'系统'
-};
-/* 通知全部由真实抓取数据（data.js）派生，绝不编造标题或链接。
-   - 仅收录带真实原文链接（u 非 # / 待补充）的条目，保证每条可溯源；
-   - 按发布日期精度降序（精确到日 > 仅到月 > 时间待补充）；
-   - 「系统」类通知来自真实抓取元数据（信源正常数 / 总数 / 抓取时间）。 */
-function _notifCatOf(cat){
-  if(cat==='政策') return 'policy';
-  if(cat==='竞品' || cat==='厂商动态') return 'vendor';
-  if(cat==='短剧观察') return 'drama';
-  if(cat==='一体化电视') return 'integrated';
-  if(cat==='数据机构' || cat==='报告') return 'data';
-  return 'data'; // 行业 / 行业媒体 归入综合数据
-}
-function _notifGrade(d){
-  if(/^\d{4}-\d{2}-\d{2}$/.test(d||'')) return 0;
-  if(/^\d{4}-\d{2}/.test(d||'')) return 1;
-  return 2;
-}
-function buildRealNotifs(){
-  const out = [];
-  const seen = new Set();
-  DATA.forEach(card=>{
-    (card.items||[]).forEach(it=>{
-      const u = it.u;
-      if(!u || u==='#' || u==='待补充') return; // 无原文链接 → 不进通知，避免无法溯源
-      if(seen.has(u)) return;
-      seen.add(u);
-      // 注意：_ts 表示「发布日期」（用于未读判断，越新越大）；没有精确日期时置 0，
-      // 避免用 Date.now() 把「仅到月」的旧稿误判成最新内容。
-      const g = _notifGrade(it.d);
-      let ts = 0;
-      if(g===0) ts = new Date(it.d + 'T00:00:00').getTime();
-      else if(g===1){ const [y,m] = it.d.split('-'); ts = new Date(Number(y), Number(m)-1, 1).getTime(); }
-      out.push({ cat:_notifCatOf(card.cat), t:it.t, link:u, d:it.d, src:card.name, _ts:ts });
-    });
-  });
-  out.sort((a,b)=>{
-    const ga=_notifGrade(a.d), gb=_notifGrade(b.d);
-    if(ga!==gb) return ga-gb;
-    return (b.d||'').localeCompare(a.d||'');
-  });
-  const CAP = 4;
-  const byCat = {};
-  out.forEach(n=>{ (byCat[n.cat]=byCat[n.cat]||[]).push(n); });
-  const order = ['policy','vendor','drama','integrated','data'];
-  let picked = [];
-  order.forEach(c=>{ if(byCat[c]) picked = picked.concat(byCat[c].slice(0, CAP)); });
-  const ok = META.source_ok||0, total = META.source_total||0, all = META.total||0;
-  const sysSub = META.generated_at ? '抓取于 ' + fmtFetchTime(META.generated_at).replace(/^今日 /,'') : '';
-  const sysHead = { cat:'system', t:`数据已更新 · ${ok}/${total} 个信源正常 · 共 ${all} 条资讯（全部可溯源）`, link:'#', d:'', src:'', _ts:notifFetchTs(), _new:false, _sub:sysSub };
-  return [sysHead, ...picked];
-}
-function buildNotifs(refresh){
-  const list = buildRealNotifs();
-  if(refresh && list[0] && list[0].cat==='system'){
-    list[0].t = '刚刚刷新 · ' + list[0].t;
-  }
-  return list;
-}
-let NOTIFS = [];   // 在 META 就绪后（下方）由 buildNotifs 填充，避免 TDZ
-let notifFilter = 'all';
-
-/* 未读状态：记录「已读时间断点」。
-   抓取时间晚于断点的条目 = 新内容 → 未读（青绿圆点 + 铃铛角标计数）。
-   点开面板时把断点推到最新抓取时间，之后再抓取进来的内容自然又变成未读。 */
-const NOTIF_SEEN_KEY = 'ott_notif_seen_at';
-function notifSeenAt(){
-  const n = Number(localStorage.getItem(NOTIF_SEEN_KEY) || 0);
-  return isFinite(n) ? n : 0;
-}
-function notifFetchTs(){
-  const d = parseStamp(META.generated_at);
-  return d ? d.getTime() : 0;
-}
-function notifMarkSeen(){
-  try{ localStorage.setItem(NOTIF_SEEN_KEY, String(Math.max(Date.now(), notifFetchTs()))); }catch(e){}
-}
-function notifUnreadCount(){
-  if(!NOTIFS.length) return 0;
-  const seen = notifSeenAt();
-  return NOTIFS.filter(n => n.cat !== 'system' && n._ts > seen).length;
-}
-function syncBellBadge(){
-  const b = document.querySelector('#btnBell .badge');
-  if(!b) return;
-  const unread = notifUnreadCount();
-  b.textContent = unread > 99 ? '99+' : String(unread);
-  b.style.display = unread ? '' : 'none';
-  document.getElementById('btnBell').title = unread ? `通知 · ${unread} 条未读` : '通知';
-}
-/* 把「绝对日期」转成人话：今天 / 昨天 / N 天前 / MM-DD */
-function notifAgoLabel(d){
-  if(!d) return '';
-  const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!m) return String(d).replace('（月精度）','');
-  const t = new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`).getTime();
-  const today = new Date(); today.setHours(0,0,0,0);
-  const diff = Math.round((today.getTime() - t) / 86400e3);
-  if(diff <= 0) return '今天';
-  if(diff === 1) return '昨天';
-  return diff + ' 天前';
-}
-function renderNotif(){
-  const body = document.getElementById('notifBody');
-  document.getElementById('notifCnt').textContent = '· ' + NOTIFS.length + ' 条';
-  const seen = notifSeenAt();
-  // 未读 = 发布日期晚于上次已读断点（系统消息不算未读）
-  let list = NOTIFS.map(n=>({...n, _unread: n.cat !== 'system' && n._ts > seen}));
-  if(notifFilter==='unread')  list = list.filter(n=>n._unread);
-  else if(notifFilter==='policy') list = list.filter(n=>n.cat==='policy');
-  else if(notifFilter==='vendor') list = list.filter(n=>n.cat==='vendor');
-  if(!list.length){
-    const tip = notifFilter==='unread' ? '暂无未读通知' : '暂无通知';
-    body.innerHTML = `<div class="notif-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><div>${tip}</div></div>`;
-    return;
-  }
-  // 参考版式：不再折叠，整体滚动
-  const itemsHtml = list.map(n=>{
-    const sub = n.cat==='system'
-      ? escapeHtml(n._sub || '')
-      : [n.src, notifAgoLabel(n.d)].filter(Boolean).join(' · ');
-    const title = n.link && n.link!=='#'
-      ? `<a class="ttl" href="${n.link}" target="_blank" rel="noopener">${escapeHtml(n.t)}</a>`
-      : `<span class="ttl">${escapeHtml(n.t)}</span>`;
-    return `
-    <div class="notif-item ${n._unread?'unread':''}">
-      <span class="notif-dot"></span>
-      <div class="notif-info">
-        <span class="lbl cat-${n.cat}">${NOTIF_CAT_LBL[n.cat]||'其他'}</span>${title}
-        ${sub ? `<span class="ts">${sub}</span>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-  body.innerHTML = '<div class="notif-list">' + itemsHtml + '</div>';
-}
 document.getElementById('btnSources').onclick = openModal;
 function closeSourcesModal(opts={}){
   const r = applySourcesToGrid();
@@ -3037,17 +2777,8 @@ document.getElementById('addSrc').onclick = async ()=>{
    ============================================================ */
 const META = RAW.meta || {};
 const REFRESH_MS = 20*60*1000;
-/* 通知在 META 就绪后再派生（buildNotifs 依赖 META，避免 TDZ），并同步铃铛角标 */
-NOTIFS = buildNotifs(false);
-/* 首次访问：把当前抓取视为「已读基线」——首屏不刷一屏未读，之后的新抓取才算未读。
-   先同步抢占基线再渲染，避免页面跳转时的竞态。 */
-/* 仅当基线缺失时才写（写''也视为已有基线），避免二次访问把已读状态重置 */
-if(localStorage.getItem(NOTIF_SEEN_KEY) === null) notifMarkSeen();
-try{ syncBellBadge(); }catch(_){}
 /* 有新抓取时：先点亮铃铛角标（刷新页面会自动 reload，这里只补上过渡期的那一下） */
 function flagNewContent(){
-  const b = document.querySelector('#btnBell .badge');
-  if(b){ b.textContent = '新'; b.style.display = ''; }
   if(!document.title.startsWith('（有新内容）')) document.title = '（有新内容）' + document.title;
 }
 /* 每 20 分钟核对站点是否已发布新数据（静默，不打扰阅读；到点自然 reload 载入新内容） */
@@ -3136,10 +2867,6 @@ async function doRefresh(){
     if(!m) throw new Error('数据格式异常');
     const fresh = JSON.parse(m[1]);
     const stamp = (fresh.meta||{}).generated_at || '';
-    // 3) 重新读取 data.js 后刷新通知（注意：这是读取静态数据文件，不是发起抓取）
-    NOTIFS = buildNotifs(true);
-    syncBellBadge();
-    if(document.body.classList.contains('notif-open')) renderNotif();
     try{ aiSummarySync(); }catch(e){}   // 数据刷新 → 右栏 AI 总结同步更新
     const wait = Math.max(0, 600 - (Date.now()-t0));
     if(stamp && stamp !== _buildAtLoad){
