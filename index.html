@@ -1040,7 +1040,8 @@
   .ai-side .seg-tag[data-cat="数据"]{color:#6aa9ff;background:rgba(106,169,255,.12);border:1px solid rgba(106,169,255,.28)}
   .ai-side .seg-tag[data-cat="竞品"]{color:#ff8a6b;background:rgba(255,138,107,.12);border:1px solid rgba(255,138,107,.28)}
   .ai-side .seg-tag[data-cat="热点"]{color:#b98cff;background:rgba(185,140,255,.12);border:1px solid rgba(185,140,255,.28)}
-  .ai-side .seg-tag:not([data-cat="政策"]):not([data-cat="数据"]):not([data-cat="竞品"]):not([data-cat="热点"]){color:var(--tx-dim);background:rgba(255,255,255,.05);border:1px solid var(--line)}
+  .ai-side .seg-tag[data-cat="媒体"]{color:#0bc5a0;background:rgba(11,197,160,.12);border:1px solid rgba(11,197,160,.28)}
+  .ai-side .seg-tag:not([data-cat="政策"]):not([data-cat="数据"]):not([data-cat="竞品"]):not([data-cat="热点"]):not([data-cat="媒体"]){color:var(--tx-dim);background:rgba(255,255,255,.05);border:1px solid var(--line)}
   body.sum-D .ai-side .sum-item{padding:8px 0 9px;border:none;border-bottom:1px solid var(--line);border-radius:0;background:none}
   body.sum-D .ai-side .seg-items{gap:0}
   body.sum-D .ai-side .si-sum{display:none}
@@ -1495,6 +1496,7 @@ const NAV = [
   {id:'data',        label:'行业数据', icon:'bar'},
   {id:'hot',         label:'热点节目', icon:'play'},
   {id:'policy',      label:'政策动态', icon:'file'},
+  {id:'media',       label:'媒体',     icon:'news'},
 ];
 
 const ICONS = {
@@ -1630,7 +1632,7 @@ const CARD_VISIBLE = 4;
 
 const TITLES = {
   home:'OTT 行业资讯', competitor:'竞品动态对标', data:'行业数据与报告', hot:'热点节目 · 剧集与综艺',
-  policy:'政策动态监控', feedback:'意见反馈', settings:'设置'
+  policy:'政策动态监控', media:'行业媒体动态', feedback:'意见反馈', settings:'设置'
 };
 const EMPTY = {
   feedback:{h:'意见反馈', p:'对看板有建议？在这里提交，我们会定期优化信息源与关键词规则。'},
@@ -1665,6 +1667,7 @@ function matchNav(card){
   if(activeNav==='competitor') return card.cat==='竞品' || card.cat==='厂商动态';
   if(activeNav==='data') return card.cat==='数据机构'||card.cat==='报告';
   if(activeNav==='policy') return card.cat==='政策';
+  if(activeNav==='media') return card.cat==='行业媒体';
   return false;
 }
 function matchKw(item, card){
@@ -3469,6 +3472,7 @@ function _dailySectionTitle(cat){
   return cat==='政策' ? '政策'
     : (cat==='数据') ? '数据'
     : (cat==='竞品'||cat==='厂商动态') ? '竞品'
+    : (cat==='行业媒体') ? '媒体'
     : (cat==='行业') ? '热点'
     : '热点';
 }
@@ -3560,14 +3564,15 @@ function aiHomePool(){
   });
   return list;
 }
-const AI_SECTION_ORDER = ['政策','数据','竞品','热点'];
+const AI_SECTION_ORDER = ['政策','数据','竞品','热点','媒体'];
 /* AI 总结跟随视图：分类视图只显示对应专题分节，主页显示完整全站总结。
    sec=演示数据 sections 里的分节名，label=右栏标题用。 */
 const SUMMARY_FOCUS = {
   competitor:{sec:'竞品', label:'竞品动态'},
   data:{sec:'数据', label:'行业数据'},
   hot:{sec:'热点', label:'热点节目'},
-  policy:{sec:'政策', label:'政策动态'}
+  policy:{sec:'政策', label:'政策动态'},
+  media:{sec:'媒体', label:'媒体'}
 };
 function summaryFocus(){ return SUMMARY_FOCUS[activeNav] || null; }
 /* 全站总结版式：D 简报式(默认) / A 图标分节 / B 今日焦点 / C 极简速读。改这一行即可换版。 */
