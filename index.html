@@ -320,8 +320,6 @@
     color:var(--tx-mid);background:rgba(255,255,255,.04);border:1px solid var(--line)
   }
   .flog-chip b{color:#e3e4e8;font-weight:700}
-  .flog-chip.warn{color:#ff8a5c;border-color:rgba(255,138,92,.4);background:rgba(255,138,92,.08)}
-  .flog-chip.warn b{color:#ff8a5c}
   .flog-sub{padding-left:17px;font-size:11px;color:#5f6167;line-height:1.5}
   .flog-empty{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -2002,13 +2000,11 @@ function renderFetchLog(){
     return;
   }
   body.innerHTML = hist.map((h,i)=>{
-    const srcBad = (h.source_total||0) - (h.source_ok||0);
-    const polBad = (h.policy_total||0) - (h.policy_ok||0);
     const date = fmtFetchFull(h.at);
     const chips = [
       `<span class="flog-chip"><b>${h.total||0}</b> 条</span>`,
-      `<span class="flog-chip${srcBad? ' warn':''}">源 <b>${h.source_ok||0}/${h.source_total||0}</b>${srcBad?` · ${srcBad} 异常`:' 正常'}</span>`,
-      (h.policy_total ? `<span class="flog-chip${polBad? ' warn':''}">政策源 <b>${h.policy_ok||0}/${h.policy_total}</b>${polBad?` · ${polBad} 异常`:' 正常'}</span>` : '')
+      `<span class="flog-chip">源 <b>${h.source_ok||0}/${h.source_total||0}</b></span>`,
+      (h.policy_total ? `<span class="flog-chip">政策源 <b>${h.policy_ok||0}/${h.policy_total}</b></span>` : '')
     ].join('');
     const sub = `有日期 ${h.with_date||0} · 待补充 ${h.pending_date||0} · 过滤陈旧 ${h.stale_filtered||0} · 去重 ${h.dup_merged||0}`;
     return `<div class="flog-item">
